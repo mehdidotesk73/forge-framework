@@ -1,0 +1,9 @@
+id,name,email,major,enrolled_at,status
+s001,Alice Chen,alice@example.com,Computer Science,2022-09-01,active
+s002,Bob Smith,bob@example.com,Mathematics,2021-09-01,active
+s003,Carol White,carol@example.com,Physics,2023-01-15,active
+s004,David Brown,david@example.com,Computer Science,2020-09-01,graduated
+s005,Eve Davis,eve@example.com,Mathematics,2022-09-01,active
+s006,Frank Miller,frank@example.com,Chemistry,2023-09-01,active
+s007,Grace Lee,grace@example.com,Computer Science,2021-09-01,active
+s008,Henry Wilson,henry@example.com,Physics,2022-01-15,inactive

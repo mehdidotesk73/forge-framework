@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+node_modules/
+dist/
+.forge/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Backup files
+*.bak
+
+# Claude / AI local config
+.claude/

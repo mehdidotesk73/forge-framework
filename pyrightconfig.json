@@ -1,0 +1,13 @@
+{
+  "include": [
+    "packages/forge-py",
+    "examples"
+  ],
+  "extraPaths": [
+    "packages/forge-py"
+  ],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false
+}

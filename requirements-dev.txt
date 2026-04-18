@@ -1,0 +1,14 @@
+# Development dependencies — includes runtime + IDE/type-checking tools
+# Install with: pip install -r requirements-dev.txt
+-r requirements.txt
+
+# Type stubs so the IDE understands third-party libraries
+pandas-stubs
+
+# Type checker (VS Code Pylance uses pyright under the hood)
+pyright
+
+# Testing
+pytest
+pytest-asyncio
+httpx          # for testing FastAPI endpoints with TestClient

@@ -1,0 +1,13 @@
+{
+  "name": "forge-framework-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/forge-ts",
+    "examples/student-manager/apps/student-manager",
+    "examples/student-manager/apps/analytics",
+    "examples/stock-monitor/apps/monitor"
+  ],
+  "scripts": {
+    "build:ts": "npm run build --workspace=packages/forge-ts"
+  }
+}

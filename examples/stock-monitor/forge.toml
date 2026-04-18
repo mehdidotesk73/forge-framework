@@ -1,0 +1,24 @@
+[project]
+name = "stock-monitor"
+forge_version = "0.1.0"
+
+[[pipelines]]
+id = "bbbbbbbb-0000-0000-0000-000000000001"
+name = "price_pipeline"
+module = "pipelines.price_pipeline"
+function = "run"
+schedule = "0 18 * * 1-5"   # weekdays at 18:00 UTC (after US market close)
+
+[[models]]
+name = "Price"
+mode = "stream"
+module = "models.price"
+class = "Price"
+
+[[endpoint_repos]]
+name = "price_endpoints"
+path = "./endpoint_repos/price_endpoints"
+
+[[apps]]
+name = "monitor"
+path = "./apps/monitor"

@@ -1,0 +1,39 @@
+[project]
+name = "student-manager"
+forge_version = "0.1.0"
+
+# Dataset IDs are assigned at load time — run `forge dataset load` to populate
+# [[datasets]]
+# id = "..."
+# name = "students_raw"
+# path = "..."
+
+[[pipelines]]
+id = "aaaaaaaa-0000-0000-0000-000000000001"
+name = "student_pipeline"
+module = "pipelines.student_pipeline"
+function = "run"
+
+[[models]]
+name = "Student"
+mode = "snapshot"
+module = "models.student"
+class = "Student"
+
+[[models]]
+name = "Grade"
+mode = "snapshot"
+module = "models.grade"
+class = "Grade"
+
+[[endpoint_repos]]
+name = "student_endpoints"
+path = "./endpoint_repos/student_endpoints"
+
+[[apps]]
+name = "student-manager"
+path = "./apps/student-manager"
+
+[[apps]]
+name = "analytics"
+path = "./apps/analytics"
