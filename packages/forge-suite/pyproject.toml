@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forge-suite"
-version = "0.1.1"
+version = "0.1.4"
 description = "Forge framework + management UI — single installable package"
 requires-python = ">=3.11"
 dependencies = [
