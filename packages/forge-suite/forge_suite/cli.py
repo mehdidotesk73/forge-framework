@@ -128,6 +128,7 @@ def _print_quickstart() -> None:
   forge-suite serve                        Start UI at http://localhost:5174
   forge-suite serve --port 8080            Custom port
   forge-suite serve --no-open              Don't open browser automatically
+  forge-suite serve --dev                  API-only on :7999 for frontend dev (pair with npm run dev)
 
 [bold]Project management[/bold]
   forge-suite init <path>                  Scaffold + register a new project
@@ -173,11 +174,26 @@ def cli() -> None:
     _maybe_show_quickstart_on_first_run()
 
 
+DEV_API_PORT = 7999  # port the Vite dev server proxies to
+
+
 @cli.command()
 @click.option("--no-open", is_flag=True, default=False, help="Don't open the browser")
 @click.option("--port", default=SERVE_PORT, show_default=True, type=int, help="Port to serve on")
-def serve(no_open: bool, port: int) -> None:
-    """Start the Forge Suite management UI."""
+@click.option("--dev", is_flag=True, default=False,
+              help="API-only mode for frontend development (no static serving, port 7999)")
+def serve(no_open: bool, port: int, dev: bool) -> None:
+    """Start the Forge Suite management UI.
+
+    Use --dev when working on the frontend source: starts the API on port 7999
+    without serving static files, then run 'npm run dev' in
+    packages/forge-suite/forge-webapp/apps/forge-webapp/ to get a Vite dev
+    server with hot-module replacement at http://localhost:5174.
+    """
+
+    if dev:
+        port = DEV_API_PORT
+        no_open = True
 
     console.print("[bold green]Forge Suite[/bold green] — starting…\n")
 
@@ -186,7 +202,7 @@ def serve(no_open: bool, port: int) -> None:
     from forge_suite.server import create_app, stop_scheduler
     import uvicorn
 
-    api = create_app()
+    api = create_app(serve_static=not dev)
 
     def _on_signal(sig: int, frame: object) -> None:
         console.print("\n[dim]Shutting down…[/dim]")
@@ -238,8 +254,12 @@ def serve(no_open: bool, port: int) -> None:
                     time.sleep(0.5)
         threading.Thread(target=_wait_and_open, daemon=True).start()
 
-    console.print(f"  UI:      http://localhost:{port}")
-    console.print(f"  API:     http://localhost:{port}/api/health")
+    if dev:
+        console.print(f"  API:     http://localhost:{port}/api/health  [dim](dev mode — no static frontend)[/dim]")
+        console.print(f"  Then run: cd packages/forge-suite/forge-webapp/apps/forge-webapp && npm run dev")
+    else:
+        console.print(f"  UI:      http://localhost:{port}")
+        console.print(f"  API:     http://localhost:{port}/api/health")
     console.print("\n[dim]Press Ctrl+C to stop[/dim]")
 
     try:

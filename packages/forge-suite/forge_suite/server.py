@@ -11,11 +11,14 @@ _WEBAPP_DIR = Path.home() / ".forge-suite" / "webapp"  # runtime backend (user-w
 _scheduler = None  # module-level so stop_scheduler() can reach it
 
 
-def create_app():
-    """Create the Forge Suite FastAPI app: management API + pre-built static frontend."""
+def create_app(serve_static: bool = True):
+    """Create the Forge Suite FastAPI app.
+
+    serve_static=False skips mounting webapp_dist — use this when running the
+    Vite dev server separately (it proxies /api and /endpoints to this process).
+    """
     global _scheduler
 
-    from fastapi.staticfiles import StaticFiles
     from forge.config import load_config
     from forge.storage.engine import StorageEngine
     from forge.pipeline.runner import PipelineRunner
@@ -41,7 +44,8 @@ def create_app():
     api = forge_create_app(config, _WEBAPP_DIR, engine, runner, _scheduler)
     _scheduler.start()
 
-    if _WEBAPP_DIST.exists():
+    if serve_static and _WEBAPP_DIST.exists():
+        from fastapi.staticfiles import StaticFiles
         api.mount("/", StaticFiles(directory=str(_WEBAPP_DIST), html=True), name="webapp")
 
     return api
