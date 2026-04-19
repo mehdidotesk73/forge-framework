@@ -8,7 +8,7 @@ version = "0.1.16"
 description = "Forge framework + management UI — single installable package. After installing, run: forge-suite quickstart"
 requires-python = ">=3.11"
 dependencies = [
-    "forge-framework>=0.1.0",
+    "forge-framework==0.1.16",
 ]
 
 [project.scripts]

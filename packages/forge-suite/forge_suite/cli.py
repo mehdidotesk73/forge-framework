@@ -19,8 +19,9 @@ console = Console()
 _PACKAGE_DIR    = Path(__file__).resolve().parent                    # forge_suite/
 _TEMPLATE_DIR   = _PACKAGE_DIR / "webapp_template"                  # bundled backend template
 _WEBAPP_DIR     = Path.home() / ".forge-suite" / "webapp"           # runtime backend (user-writable)
-_QUICKSTART_SRC  = _PACKAGE_DIR / "QUICKSTART.md"                   # bundled reference doc
-_QUICKSTART_DST  = Path.home() / ".forge-suite" / "QUICKSTART.md"  # user-accessible copy
+_QUICKSTART_SRC     = _PACKAGE_DIR / "QUICKSTART.md"                          # bundled reference doc
+_QUICKSTART_DST     = Path.home() / ".forge-suite" / "QUICKSTART.md"         # user-accessible copy
+_QUICKSTART_VER_DST = Path.home() / ".forge-suite" / ".quickstart_version"   # version stamp
 _quickstart_shown = False  # prevents double-print when help/quickstart is the first command
 
 SERVE_PORT = 5174
@@ -95,13 +96,17 @@ def _sync_quickstart_file() -> None:
 
 
 def _maybe_show_quickstart_on_first_run() -> None:
-    """On first run after install: copy QUICKSTART.md and print it once."""
+    """On first run after install or upgrade: copy QUICKSTART.md and print it once."""
+    from forge.version import __version__
     global _quickstart_shown
-    if _QUICKSTART_DST.exists():
+    stored_version = _QUICKSTART_VER_DST.read_text().strip() if _QUICKSTART_VER_DST.exists() else ""
+    if stored_version == __version__:
         return
     _sync_quickstart_file()
     _print_quickstart()
     _quickstart_shown = True
+    _QUICKSTART_VER_DST.parent.mkdir(parents=True, exist_ok=True)
+    _QUICKSTART_VER_DST.write_text(__version__)
     console.print(f"  [dim]Guide saved to: [bold]{_QUICKSTART_DST}[/bold][/dim]")
     console.print("  [dim]Run [bold]forge-suite quickstart[/bold] to view it again, or [bold]forge-suite quickstart --open[/bold] to open in your editor.[/dim]\n")
 

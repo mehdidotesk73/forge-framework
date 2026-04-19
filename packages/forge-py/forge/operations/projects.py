@@ -241,6 +241,7 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
         field_count = ""
         built_at = ""
         backing_dataset_id = ""
+        backing_dataset_name = ""
         snapshot_dataset_id = ""
         if schema_path.exists():
             schema = json.loads(schema_path.read_text())
