@@ -199,7 +199,26 @@ if [ "$FROM_PHASE" -le 1 ]; then
     log_ok "On branch: $BRANCH"
   fi
 
-  # 1c. npm credentials — check token exists then verify it against the registry
+  # 1c. Git remote push access
+  log_step "Verifying git push access to origin (git push --dry-run)..."
+  GIT_PUSH_CHECK=$(git push --dry-run origin HEAD 2>&1 || true)
+  if echo "$GIT_PUSH_CHECK" | grep -qiE "fatal|error|authentication|denied|could not|403|401"; then
+    echo -e "\n${Y}  git push --dry-run failed with:${X}"
+    echo "  $GIT_PUSH_CHECK"
+    echo -e "\n${Y}  Your git credentials for github.com are missing or expired."
+    echo -e "  Fix options (pick one):${X}"
+    echo -e "    ${BOLD}Option 1 — GitHub CLI (recommended):${X}"
+    echo -e "      brew install gh && gh auth login"
+    echo -e "    ${BOLD}Option 2 — Personal Access Token:${X}"
+    echo -e "      1. Generate a token at https://github.com/settings/tokens (needs 'repo' scope)"
+    echo -e "      2. Run:  git credential approve  (or let macOS Keychain store it on next push)"
+    echo -e "    ${BOLD}Option 3 — Switch to SSH:${X}"
+    echo -e "      git remote set-url origin git@github.com:mehdidotesk73/forge-framework.git"
+    die "Cannot push to origin. Fix git credentials first."
+  fi
+  log_ok "git push access confirmed (origin)"
+
+  # 1d. npm credentials — check token exists then verify it against the registry
   log_step "Checking npm credentials..."
   NPM_TOKEN=$(grep -s '//registry.npmjs.org/:_authToken=' "$HOME/.npmrc" | head -1 || true)
   if [[ -z "$NPM_TOKEN" ]]; then
@@ -213,7 +232,7 @@ if [ "$FROM_PHASE" -le 1 ]; then
   fi
   log_ok "npm authenticated as: $NPM_USER"
 
-  # 1d. PyPI credentials — check config then verify token against upload endpoint
+  # 1e. PyPI credentials — check config then verify token against upload endpoint
   log_step "Checking PyPI credentials..."
   if [[ ! -f "$HOME/.pypirc" ]]; then
     die "~/.pypirc not found. Create it with [pypi] credentials (see: https://pypi.org/manage/account/token/)"
@@ -222,40 +241,43 @@ if [ "$FROM_PHASE" -le 1 ]; then
     die "~/.pypirc exists but has no [pypi] section."
   fi
   log_ok "~/.pypirc found with [pypi] section"
-  log_step "Verifying PyPI token against upload endpoint..."
+  log_step "Verifying PyPI token format and network reachability..."
   PYPI_CHECK=$("$PYTHON" - <<'PYEOF'
-import configparser, urllib.request, urllib.error, base64, sys, os
+import configparser, urllib.request, urllib.error, sys, os
 cfg = configparser.ConfigParser()
 cfg.read(os.path.expanduser("~/.pypirc"))
 try:
-    username = cfg.get("pypi", "username", fallback="__token__")
     password = cfg.get("pypi", "password")
 except configparser.NoOptionError:
     print("NOPASSWORD")
     sys.exit(0)
-creds = base64.b64encode(f"{username}:{password}".encode()).decode()
-req = urllib.request.Request("https://upload.pypi.org/legacy/", method="POST", data=b"")
-req.add_header("Authorization", f"Basic {creds}")
+# PyPI API tokens always start with "pypi-"; flag anything else
+if not password.startswith("pypi-"):
+    print(f"BADFORMAT")
+    sys.exit(0)
+# Confirm upload.pypi.org is reachable
 try:
-    urllib.request.urlopen(req, timeout=10)
-    print("OK")
-except urllib.error.HTTPError as e:
-    # 400 = auth passed but request has no content (expected)
-    # 403 = auth failed
-    print("OK" if e.code == 400 else f"FAILED:{e.code}")
+    urllib.request.urlopen("https://upload.pypi.org", timeout=10)
+except urllib.error.HTTPError:
+    pass  # any HTTP response means the host is reachable
 except Exception as e:
-    print(f"ERROR:{e}")
+    print(f"UNREACHABLE:{e}")
+    sys.exit(0)
+print(f"OK:{password[:12]}…")
 PYEOF
 )
   case "$PYPI_CHECK" in
-    OK)
-      log_ok "PyPI token verified" ;;
+    OK:*)
+      log_ok "PyPI token format valid (${PYPI_CHECK#OK:}), upload.pypi.org reachable"
+      log_warn "Note: token validity can only be confirmed on actual upload (PyPI has no auth-check endpoint)" ;;
     NOPASSWORD)
       die "~/.pypirc [pypi] section has no 'password' key. Add your API token as: password = pypi-xxx" ;;
-    FAILED:403)
-      die "PyPI token is invalid or expired (HTTP 403). Regenerate at https://pypi.org/manage/account/token/" ;;
+    BADFORMAT)
+      die "PyPI token does not start with 'pypi-'. Regenerate an API token at https://pypi.org/manage/account/token/" ;;
+    UNREACHABLE:*)
+      die "Cannot reach upload.pypi.org: ${PYPI_CHECK#UNREACHABLE:}. Check network/VPN." ;;
     *)
-      die "PyPI token check failed: $PYPI_CHECK" ;;
+      die "PyPI credential check failed: $PYPI_CHECK" ;;
   esac
 
   # 1e. Python build + twine
