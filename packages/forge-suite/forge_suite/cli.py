@@ -16,9 +16,11 @@ from rich.console import Console
 
 console = Console()
 
-_PACKAGE_DIR = Path(__file__).resolve().parent                      # forge_suite/
-_TEMPLATE_DIR = _PACKAGE_DIR / "webapp_template"                    # bundled backend template
-_WEBAPP_DIR   = Path.home() / ".forge-suite" / "webapp"             # runtime backend (user-writable)
+_PACKAGE_DIR    = Path(__file__).resolve().parent                    # forge_suite/
+_TEMPLATE_DIR   = _PACKAGE_DIR / "webapp_template"                  # bundled backend template
+_WEBAPP_DIR     = Path.home() / ".forge-suite" / "webapp"           # runtime backend (user-writable)
+_QUICKSTART_SRC = _PACKAGE_DIR / "QUICKSTART.md"                    # bundled reference doc
+_QUICKSTART_DST = Path.home() / ".forge-suite" / "QUICKSTART.md"   # user-accessible copy
 
 SERVE_PORT = 5174
 
@@ -81,7 +83,37 @@ def _bootstrap_webapp() -> None:
     finally:
         os.chdir(_prev_cwd)
     console.print("  [dim]forge-suite ready.[/dim]\n")
+
+
+def _sync_quickstart_file() -> None:
+    """Copy the bundled QUICKSTART.md to ~/.forge-suite/ (always up to date)."""
+    import shutil
+    _QUICKSTART_DST.parent.mkdir(parents=True, exist_ok=True)
+    if _QUICKSTART_SRC.exists():
+        shutil.copy2(str(_QUICKSTART_SRC), str(_QUICKSTART_DST))
+
+
+def _maybe_show_quickstart_on_first_run() -> None:
+    """On first run after install: copy QUICKSTART.md and print it once."""
+    if _QUICKSTART_DST.exists():
+        return
+    _sync_quickstart_file()
     _print_quickstart()
+    console.print(f"  [dim]Guide saved to: [bold]{_QUICKSTART_DST}[/bold][/dim]")
+    console.print("  [dim]Run [bold]forge-suite quickstart[/bold] to view it again, or [bold]forge-suite quickstart --open[/bold] to open in your editor.[/dim]\n")
+
+
+def _open_in_editor(path: Path) -> None:
+    """Open a file in the OS default application."""
+    import platform
+    system = platform.system()
+    if system == "Windows":
+        import os
+        os.startfile(str(path))
+    elif system == "Darwin":
+        subprocess.run(["open", str(path)], check=False)
+    else:
+        subprocess.run(["xdg-open", str(path)], check=False)
 
 
 def _print_quickstart() -> None:
@@ -135,6 +167,7 @@ def _print_quickstart() -> None:
 @click.version_option(package_name="forge-suite")
 def cli() -> None:
     """Forge Suite — framework + management UI"""
+    _maybe_show_quickstart_on_first_run()
 
 
 @cli.command()
@@ -367,15 +400,31 @@ def project_serve(project_path: str, port: int, app: str | None) -> None:
 
 
 @cli.command("quickstart")
-def quickstart() -> None:
-    """Print all forge-suite and forge CLI commands."""
-    _print_quickstart()
+@click.option("--open", "open_editor", is_flag=True, default=False,
+              help="Open QUICKSTART.md in your default text editor.")
+def quickstart(open_editor: bool) -> None:
+    """Print all forge-suite and forge CLI commands (or open in editor)."""
+    _sync_quickstart_file()
+    if open_editor:
+        console.print(f"  Opening [bold]{_QUICKSTART_DST}[/bold] in your default editor…")
+        _open_in_editor(_QUICKSTART_DST)
+    else:
+        _print_quickstart()
+        console.print(f"  [dim]Guide file: [bold]{_QUICKSTART_DST}[/bold]  (run with [bold]--open[/bold] to open in editor)[/dim]\n")
 
 
 @cli.command("help")
-def help_cmd() -> None:
+@click.option("--open", "open_editor", is_flag=True, default=False,
+              help="Open QUICKSTART.md in your default text editor.")
+def help_cmd(open_editor: bool) -> None:
     """Alias for quickstart — print all forge-suite and forge CLI commands."""
-    _print_quickstart()
+    _sync_quickstart_file()
+    if open_editor:
+        console.print(f"  Opening [bold]{_QUICKSTART_DST}[/bold] in your default editor…")
+        _open_in_editor(_QUICKSTART_DST)
+    else:
+        _print_quickstart()
+        console.print(f"  [dim]Guide file: [bold]{_QUICKSTART_DST}[/bold]  (run with [bold]--open[/bold] to open in editor)[/dim]\n")
 
 
 @cli.command("uninstall")
