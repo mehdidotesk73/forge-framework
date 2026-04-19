@@ -37,14 +37,26 @@ def pipeline_run(name: str) -> None:
             console.print(f"Available: {', '.join(available)}")
         raise SystemExit(1)
 
+    import sys
+    import contextlib
+
     console.print(f"[cyan]Running pipeline:[/cyan] {name}")
-    with console.status(f"Executing {pipeline_cfg.module}.{pipeline_cfg.function}..."):
-        try:
-            defn = runner.load_pipeline(pipeline_cfg.module, pipeline_cfg.function)
+    try:
+        defn = runner.load_pipeline(pipeline_cfg.module, pipeline_cfg.function)
+        # console.status() uses a background thread that triggers WinError 10038
+        # on Windows (WSAENOTSOCK in the Console API cleanup path).
+        status_ctx = (
+            console.status(f"Executing {pipeline_cfg.module}.{pipeline_cfg.function}...")
+            if sys.platform != "win32"
+            else contextlib.nullcontext()
+        )
+        with status_ctx:
             result = runner.run(defn, config_name=name)
-        except Exception as exc:
-            console.print(f"[red]✗ Pipeline failed:[/red] {exc}")
-            raise SystemExit(1) from exc
+    except Exception as exc:
+        import traceback
+        console.print(f"[red]✗ Pipeline failed:[/red] {exc}")
+        console.print("[dim]" + traceback.format_exc() + "[/dim]")
+        raise SystemExit(1) from exc
 
     console.print(f"[green]✓ Success[/green] ({result['duration_seconds']:.2f}s)")
     if result.get("rows_written"):
