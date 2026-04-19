@@ -56,7 +56,7 @@ cp -r "$DIST_SRC" "$DIST_DST"
 
 # ── Make launch script executable ────────────────────────────────────────────
 
-chmod +x "$REPO_ROOT/forge-suite-webapp.command" "$REPO_ROOT/forge-suite-cli.command"
+chmod +x "$REPO_ROOT/forge-suite-webapp.command" "$REPO_ROOT/forge-suite-webapp-dev.command" "$REPO_ROOT/forge-suite-cli.command"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
