@@ -41,3 +41,7 @@ def version() -> None:
     from forge.version import __version__, TS_VERSION
     console.print(f"[bold]forge-framework[/bold] {__version__} (Python)")
     console.print(f"[bold]@forge-suite/ts[/bold] {TS_VERSION} (TypeScript)")
+
+
+if __name__ == "__main__":
+    cli()

@@ -309,3 +309,7 @@ def project_serve(project_path: str, port: int, app: str | None) -> None:
         subprocess.run(cmd, cwd=root)
     except KeyboardInterrupt:
         console.print("\n[dim]Stopped.[/dim]")
+
+
+if __name__ == "__main__":
+    cli()

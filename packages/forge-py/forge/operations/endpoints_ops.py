@@ -54,12 +54,12 @@ def call_project_endpoint(root: Path, endpoint_id: str, payload_json: str, api_p
         return {"error": str(exc)}
 
 
-def get_docs(forge_root: Path | None = None) -> dict:
+def get_docs() -> dict:
     """Return all Forge framework docs as {name, title, content} objects."""
-    if forge_root is None:
-        forge_root = Path(__file__).resolve().parents[4]
-
-    docs_dir = forge_root / "docs"
+    # Installed: forge/docs/ (bundled at release time). Dev fallback: repo root docs/.
+    pkg_docs = Path(__file__).resolve().parent.parent / "docs"
+    repo_docs = Path(__file__).resolve().parents[4] / "docs"
+    docs_dir = pkg_docs if pkg_docs.exists() else repo_docs
     if not docs_dir.exists():
         return {"docs": [], "error": f"Docs directory not found: {docs_dir}"}
 

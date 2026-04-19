@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 import uuid
 from pathlib import Path
 
@@ -587,7 +589,14 @@ def create_app(
         suite_root_file.write_text(str(suite_root))
 
     _patch_toml_apps(root, name, port)
-    return {"path": str(app_dir), "name": name, "port": port}
+
+    npm = shutil.which("npm")
+    npm_ok = False
+    if npm:
+        result = subprocess.run([npm, "install"], cwd=str(app_dir), capture_output=True)
+        npm_ok = result.returncode == 0
+
+    return {"path": str(app_dir), "name": name, "port": port, "npm_installed": npm_ok}
 
 
 def _patch_toml_apps(root: Path, name: str, port: str) -> None:

@@ -26,4 +26,9 @@ def app_create(name: str, port: str) -> None:
         raise SystemExit(1)
     console.print(f"[green]✓[/green] Created app [bold]{result['name']}[/bold] (port {result['port']})")
     console.print(f"  {result['path']}")
-    console.print(f"  Run: cd {result['path']} && npm install && npm run dev")
+    if result.get("npm_installed"):
+        console.print("  Dependencies installed — run: npm run dev")
+    else:
+        console.print("  Run: cd apps/{} && npm install && npm run dev".format(result['name']))
+        if not result.get("npm_installed"):
+            console.print("  [yellow](npm not found — install Node.js to use the dev server)[/yellow]")
