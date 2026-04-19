@@ -12,17 +12,17 @@ import json
 import uuid
 from datetime import date
 
-from forge.control import action_endpoint, computed_column_endpoint
+from forge.control import action_endpoint, computed_attribute_endpoint
 from models.student import Student
 from models.grade import Grade
 
-CREATE_STUDENT_ID = "11111111-0000-0000-0000-000000000001"
-COMPUTE_METRICS_ID = "11111111-0000-0000-0000-000000000002"
-CREATE_GRADE_ID = "11111111-0000-0000-0000-000000000003"
-EDIT_STUDENT_ID = "11111111-0000-0000-0000-000000000004"
-DELETE_STUDENT_ID = "11111111-0000-0000-0000-000000000005"
-EDIT_GRADE_ID = "11111111-0000-0000-0000-000000000006"
-DELETE_GRADE_ID = "11111111-0000-0000-0000-000000000007"
+CREATE_STUDENT_ID = "53d12e07-c589-44cf-98c2-13a7a63c2978"
+COMPUTE_METRICS_ID = "6b379c5c-4c48-4ad0-b8f4-9fa5a7bbffdd"
+CREATE_GRADE_ID = "ffff3c2b-a56f-466e-9f63-5d557ee2113c"
+EDIT_STUDENT_ID = "324f7bb6-89fa-412b-a10d-32aa26307863"
+DELETE_STUDENT_ID = "dbed6a88-cbdc-46b7-8c4f-e1ebb305d06b"
+EDIT_GRADE_ID = "ecc3bdf3-5e4a-4b5b-8a94-f8049960e531"
+DELETE_GRADE_ID = "921ef15c-98dd-4dbe-a36a-b437971757d4"
 
 _GRADE_POINTS: dict[str, float] = {
     "A": 4.0,
@@ -91,7 +91,17 @@ def edit_student(
     if student is None:
         return {"error": f"Student {id} not found"}
 
-    updates = {k: v for k, v in {"name": name, "email": email, "major": major, "enrolled_at": enrolled_at, "status": status}.items() if v != ""}
+    updates = {
+        k: v
+        for k, v in {
+            "name": name,
+            "email": email,
+            "major": major,
+            "enrolled_at": enrolled_at,
+            "status": status,
+        }.items()
+        if v != ""
+    }
     student.update(**updates)
     return student._to_dict()
 
@@ -143,7 +153,7 @@ def create_grade(
     return new_grade._to_dict()
 
 
-@computed_column_endpoint(
+@computed_attribute_endpoint(
     object_type="Student",
     columns=["gpa", "rank"],
     endpoint_id=COMPUTE_METRICS_ID,

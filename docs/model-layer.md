@@ -351,7 +351,7 @@ Import this in your React app — never write `fetch` calls for object data dire
 
 The Model layer must **never**:
 
-- Import `@action_endpoint` or `@computed_column_endpoint` decorators
+- Import `@action_endpoint` or `@computed_attribute_endpoint` decorators
 - Import anything from `packages/forge-ts` or any React/widget code
 - Construct HTTP requests
 - Reference UI concerns (display state, routing, component lifecycle)

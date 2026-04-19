@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import type {
-  ComputedColumnAttachment,
+  ComputedAttributeAttachment,
   ContextMenuItem,
   ForgeObjectSet,
   InteractionConfig,
@@ -41,7 +41,7 @@ interface ContextMenuState {
 export interface ObjectTableProps<T extends Record<string, unknown>> {
   objectSet: ForgeObjectSet<T>;
   interaction?: InteractionConfig<T>;
-  computedColumns?: ComputedColumnAttachment[];
+  computedColumns?: ComputedAttributeAttachment[];
   localState?: Record<string, unknown>;
   renderCell?: (field: string, value: unknown, row: T) => React.ReactNode;
   className?: string;

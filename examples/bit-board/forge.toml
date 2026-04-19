@@ -1,7 +1,6 @@
 [project]
 name = "bit-board"
 forge_version = "0.1.0"
-api_port = 4176
 
 [[pipelines]]
 name = "bitcoin_price_ingestion"
@@ -22,4 +21,3 @@ path = "./endpoint_repos/bitcoin_processing"
   name = "btc-chart"                                        
   id = "btc-chart"                                                                                                                                                                                              
   path = "./apps/btc-chart"                                                                                                                                                                                     
-  port = "5176"

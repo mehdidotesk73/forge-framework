@@ -68,7 +68,7 @@ export interface InteractionConfig<T = unknown> {
 
 // ── Computed column endpoint attachment ──────────────────────────────────────
 
-export interface ComputedColumnAttachment {
+export interface ComputedAttributeAttachment {
   endpointId: string;
   params?: Record<string, unknown | StateBinding>;
 }
@@ -99,7 +99,7 @@ export interface ParamDescriptor {
 export interface EndpointDescriptor {
   id: string;
   name: string;
-  kind: "action" | "computed_column" | "streaming";
+  kind: "action" | "computed_attribute" | "streaming";
   description: string;
   repo: string;
   params: ParamDescriptor[];

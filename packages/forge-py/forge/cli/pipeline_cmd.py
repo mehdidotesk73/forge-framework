@@ -97,6 +97,21 @@ def pipeline_list() -> None:
     console.print(table)
 
 
+@pipeline_group.command("create")
+@click.argument("name")
+def pipeline_create(name: str) -> None:
+    """Scaffold a new pipeline file and register it in forge.toml."""
+    from forge.config import find_project_root
+    from forge.operations.scaffolding import create_pipeline
+    root = find_project_root()
+    result = create_pipeline(root, name)
+    if "error" in result:
+        console.print(f"[red]✗[/red] {result['error']}")
+        raise SystemExit(1)
+    console.print(f"[green]✓[/green] Created [bold]{result['name']}[/bold]")
+    console.print(f"  {result['file']}")
+
+
 @pipeline_group.command("history")
 @click.argument("name")
 def pipeline_history(name: str) -> None:

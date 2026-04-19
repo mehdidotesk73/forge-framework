@@ -21,6 +21,25 @@ def endpoint_group() -> None:
     """Build and inspect endpoints."""
 
 
+@endpoint_group.command("create")
+@click.argument("name")
+@click.option("--repo", required=True, help="Endpoint repo to add to (existing or new name)")
+@click.option("--kind", default="action", show_default=True,
+              type=click.Choice(["action", "streaming", "computed_attribute"]),
+              help="Endpoint kind")
+def endpoint_create(name: str, repo: str, kind: str) -> None:
+    """Scaffold a new endpoint function in an endpoint repo."""
+    from forge.config import find_project_root
+    from forge.operations.scaffolding import create_endpoint
+    root = find_project_root()
+    result = create_endpoint(root, name, repo, kind)
+    if "error" in result:
+        console.print(f"[red]✗[/red] {result['error']}")
+        raise SystemExit(1)
+    console.print(f"[green]✓[/green] Created [bold]{result['name']}[/bold] ({result['kind']}) in repo [bold]{result['repo']}[/bold]")
+    console.print(f"  {result['file']}")
+
+
 @endpoint_group.command("build")
 @click.option("--repo", default=None, help="Build a single endpoint repo by name")
 def endpoint_build(repo: str | None) -> None:

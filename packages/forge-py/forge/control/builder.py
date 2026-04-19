@@ -10,7 +10,7 @@ from typing import Any
 from forge.config import EndpointRepoConfig, ProjectConfig
 from forge.control.decorator import (
     ActionEndpointDefinition,
-    ComputedColumnEndpointDefinition,
+    ComputedAttributeEndpointDefinition,
     StreamingEndpointDefinition,
     ParamSchema,
     get_endpoint_registry,
@@ -72,7 +72,7 @@ class EndpointBuilder:
 
     def _build_descriptor(
         self,
-        defn: ActionEndpointDefinition | ComputedColumnEndpointDefinition | StreamingEndpointDefinition,
+        defn: ActionEndpointDefinition | ComputedAttributeEndpointDefinition | StreamingEndpointDefinition,
         repo_name: str,
     ) -> dict[str, Any]:
         is_streaming = isinstance(defn, StreamingEndpointDefinition)
@@ -85,7 +85,7 @@ class EndpointBuilder:
             "params": [self._serialize_param(p) for p in defn.params],
             "path": f"/endpoints/{defn.id}" + ("/stream" if is_streaming else ""),
         }
-        if isinstance(defn, ComputedColumnEndpointDefinition):
+        if isinstance(defn, ComputedAttributeEndpointDefinition):
             base["object_type"] = defn.object_type
             base["columns"] = defn.columns
         return base

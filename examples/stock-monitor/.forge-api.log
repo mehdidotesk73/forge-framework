@@ -1,0 +1,6 @@
+Forge dev server — stock-monitor
+  API:    http://127.0.0.1:61942/api/health
+  Docs:   http://127.0.0.1:61942/docs
+  App : cd ./apps/monitor && npm run dev  (run npm run build to serve here)
+
+Press Ctrl+C to stop

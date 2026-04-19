@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from forge.config import ProjectConfig
 from forge.control.decorator import (
     ActionEndpointDefinition,
-    ComputedColumnEndpointDefinition,
+    ComputedAttributeEndpointDefinition,
     StreamingEndpointDefinition,
     get_endpoint_registry,
 )
@@ -117,7 +117,7 @@ def create_app(
                 uow.flush()  # atomic write on success; skipped on exception
                 return result
 
-            elif isinstance(defn, ComputedColumnEndpointDefinition):
+            elif isinstance(defn, ComputedAttributeEndpointDefinition):
                 # Computed column calls are read-only — init context for model
                 # queries but no UoW flush needed
                 init_context(engine)

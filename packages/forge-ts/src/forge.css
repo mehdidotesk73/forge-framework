@@ -37,6 +37,18 @@
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--forge-font);
+  background: var(--forge-bg-deep);
+  color: var(--forge-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root { min-height: 100vh; }
+
 .forge-root, [data-forge] {
   font-family: var(--forge-font);
   color: var(--forge-text);
@@ -44,7 +56,6 @@
   min-height: 100vh;
   box-sizing: border-box;
 }
-*, *::before, *::after { box-sizing: border-box; }
 
 /* ── Navbar ─────────────────────────────────────────────────────────────── */
 .forge-navbar {

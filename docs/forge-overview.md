@@ -23,7 +23,7 @@ Forge enforces a strict four-layer architecture. Each layer has a single respons
 │  Build artifact: composed app (static HTML/JS bundle)          │
 ├─────────────────────────────────────────────────────────────────┤
 │  Control Layer                                                  │
-│  @action_endpoint, @computed_column_endpoint decorators        │
+│  @action_endpoint, @computed_attribute_endpoint decorators        │
 │  Build artifact: endpoints.json (call-form descriptor registry)│
 ├─────────────────────────────────────────────────────────────────┤
 │  Model Layer                                                    │
@@ -112,7 +112,13 @@ path = "endpoints/student"
 
 [[apps]]
 name = "student_manager"
-path = "apps/student-manager/dist"
+path = "apps/student-manager"
+
+[auth]
+provider = "none"          # stub — reserved for future AuthProvider backends
+
+[database]
+provider = "local"         # stub — reserved for future DatabaseProvider backends
 ```
 
 Dataset UUIDs are assigned once at `forge dataset load` time and must never change. They are the stable contract between layers.
@@ -136,11 +142,14 @@ forge model build
 # 4. Build endpoint descriptor registry
 forge endpoint build
 
-# 5. Start the development server
+# 5. (Optional) Build React apps for production
+forge build
+
+# 6. Start the development server
 forge dev serve
 ```
 
-In practice, `forge dev serve` auto-discovers all registered pipelines, models, and endpoints on startup — steps 3 and 4 are only needed when the schema or endpoint definitions change.
+In practice, `forge dev serve` auto-discovers all registered pipelines, models, and endpoints on startup — steps 3 and 4 are only needed when the schema or endpoint definitions change. `forge build` runs `npm run build` for each `[[apps]]` entry and is only needed to produce static bundles for production or for Forge Suite to serve the app.
 
 ---
 
@@ -201,6 +210,23 @@ Pipelines with a `schedule` cron string in `forge.toml` are registered with APSc
 
 ---
 
+## Documentation Index
+
+| Document | Contents |
+|----------|----------|
+| `forge-overview.md` | This file — architecture, storage, build sequence, design decisions |
+| `pipeline-layer.md` | `@pipeline` decorator, InputHandle/OutputHandle, scheduling, run history |
+| `model-layer.md` | `@forge_model`, field definitions, snapshot vs. stream, CRUD, relations |
+| `control-layer.md` | `@action_endpoint`, `@computed_attribute_endpoint`, business logic patterns |
+| `view-layer.md` | React widgets, generated TS SDK, state bindings, form handling |
+| `new-project-guide.md` | End-to-end guide: init → pipeline → model → endpoint → app → dev server |
+| `forge-suite-cli.md` | Full project lifecycle via the Forge Suite CLI |
+| `forge-suite-webapp.md` | Full project lifecycle via the Forge Suite webapp UI |
+| `forge-suite-integration.md` | Registering projects with Forge Suite; loading examples into the UI |
+| `todo.md` | Roadmap and known limitations |
+
+---
+
 ## Key Design Decisions
 
 | Decision | Rationale |
@@ -212,3 +238,4 @@ Pipelines with a `schedule` cron string in `forge.toml` are registered with APSc
 | Dual-language SDK generation | Type safety maintained across the Python/TypeScript boundary |
 | Context variables for engine/UoW | Thread-safe request-scoped access without explicit parameter passing |
 | JSON key lists for relations | No foreign-key constraint machinery; relations expressed in plain data |
+| Provider Protocol interfaces | `AuthProvider` and `DatabaseProvider` are `typing.Protocol` stubs today; swap implementations without changing project code |

@@ -16,3 +16,4 @@ forge-suite = "forge_suite.cli:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["forge_suite"]
+artifacts = ["forge_suite/webapp_dist/**"]

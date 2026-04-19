@@ -19,11 +19,11 @@ import {
   Selector,
   bindState,
   type ForgeObjectSet,
+  fetchObjectSet,
 } from "@forge-framework/ts";
-import { fetchObjectSet } from "@forge-framework/ts/runtime";
 
 // Endpoint UUID from the control layer (price_endpoints repo)
-const MOVING_AVG_ID = "22222222-0000-0000-0000-000000000001";
+const MOVING_AVG_ID = "e9947f90-da94-4f5e-8602-e79c13c62868";
 
 type PriceRow = {
   symbol: string;
@@ -63,7 +63,7 @@ export function MonitorPage() {
   // Filter to selected symbol for the chart
   const symbolRows = useMemo(
     () => (data?.rows ?? []).filter((r) => r.symbol === symbol),
-    [data, symbol]
+    [data, symbol],
   );
 
   const objectSet: ForgeObjectSet<PriceRow> | undefined = data
@@ -86,15 +86,15 @@ export function MonitorPage() {
     <div>
       <h2>Stock Price Monitor</h2>
 
-      <Container layout="flex" direction="row" gap="1rem" padding="0 0 1rem 0">
+      <Container layout='flex' direction='row' gap='1rem' padding='0 0 1rem 0'>
         <Selector
-          label="Symbol"
+          label='Symbol'
           value={symbol}
           options={SYMBOL_OPTIONS}
           onChange={setSymbol}
         />
         <Selector
-          label="Moving Average Window"
+          label='Moving Average Window'
           value={days}
           options={WINDOW_OPTIONS}
           onChange={setDays}
@@ -106,11 +106,9 @@ export function MonitorPage() {
         <h3>{symbol} — Close Price</h3>
         <Chart
           objectSet={objectSet}
-          chartType="line"
-          xField="date"
-          series={[
-            { field: "close", label: "Close", color: "#6366f1" },
-          ]}
+          chartType='line'
+          xField='date'
+          series={[{ field: "close", label: "Close", color: "#6366f1" }]}
           height={320}
         />
       </div>

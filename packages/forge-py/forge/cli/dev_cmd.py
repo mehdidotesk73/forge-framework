@@ -60,6 +60,7 @@ def dev_serve(app: str | None, host: str, port: int, reload: bool) -> None:
         for a in config.apps:
             if app is None or a.name == app:
                 app_path = (root / a.path).resolve()
+                _ensure_forge_ts_linked(app_path, root)
                 dist_exists = (app_path / "dist").exists()
                 if dist_exists:
                     console.print(f"  App [{a.name}]: http://{host}:{port + 1}/")
@@ -83,6 +84,46 @@ def dev_serve(app: str | None, host: str, port: int, reload: bool) -> None:
         )
     finally:
         scheduler.stop()
+
+
+def _ensure_forge_ts_linked(app_dir: Path, project_root: Path) -> None:
+    """Symlink @forge-framework/ts into app node_modules if missing.
+
+    Outside the monorepo the package isn't resolvable via walk-up; this
+    finds the nearest installed copy and links it so Vite can resolve it.
+    """
+    import os
+
+    scope_dir = app_dir / "node_modules" / "@forge-framework"
+    link_target = scope_dir / "ts"
+
+    if link_target.exists() or link_target.is_symlink():
+        return
+
+    # Walk up from both the project root and the forge package itself.
+    # The second walk handles projects that live outside the monorepo tree —
+    # forge-py is inside the monorepo so its walk-up reaches the workspace root.
+    forge_ts_src: Path | None = None
+    search_roots = [project_root, Path(__file__).resolve()]
+    for start in search_roots:
+        for candidate in [start, *start.parents]:
+            pkg = candidate / "node_modules" / "@forge-framework" / "ts"
+            if pkg.is_dir():
+                forge_ts_src = pkg
+                break
+        if forge_ts_src:
+            break
+
+    if forge_ts_src is None:
+        console.print(
+            "[yellow]⚠[/yellow] @forge-framework/ts not found — "
+            "run `npm install` in the app directory after publishing to npm."
+        )
+        return
+
+    scope_dir.mkdir(parents=True, exist_ok=True)
+    os.symlink(str(forge_ts_src), str(link_target))
+    console.print(f"[dim]Linked @forge-framework/ts → {forge_ts_src}[/dim]")
 
 
 def _mount_app_static(api, config, root: Path, app_filter: str | None) -> None:

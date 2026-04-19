@@ -16,11 +16,11 @@
       "require": "./dist/runtime.js",
       "types": "./dist/runtime.d.ts"
     },
-    "./forge.css": "./src/forge.css"
+    "./forge.css": "./dist/forge.css"
   },
   "files": ["dist"],
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cp src/forge.css dist/forge.css",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit"
   },

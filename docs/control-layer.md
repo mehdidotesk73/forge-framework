@@ -26,7 +26,7 @@ Inside an endpoint function, the StorageEngine and UnitOfWork are injected via c
 
 ### Endpoint Registry
 
-`@action_endpoint` and `@computed_column_endpoint` register into a global `_ENDPOINT_REGISTRY` at import time. `forge endpoint build` imports all modules in the configured endpoint repos, collects the registry, and writes `.forge/artifacts/endpoints.json`.
+`@action_endpoint` and `@computed_attribute_endpoint` register into a global `_ENDPOINT_REGISTRY` at import time. `forge endpoint build` imports all modules in the configured endpoint repos, collects the registry, and writes `.forge/artifacts/endpoints.json`.
 
 ---
 
@@ -110,11 +110,11 @@ Computed columns attach derived values to rows in an `<ObjectTable>`. The endpoi
 
 ```python
 # endpoints/student/metrics.py
-from forge.control import computed_column_endpoint
+from forge.control import computed_attribute_endpoint
 from models.student import Student
 from models.grade import Grade
 
-@computed_column_endpoint(
+@computed_attribute_endpoint(
     object_type="Student",
     columns=["gpa", "letter_rank"],
     endpoint_id="22222222-0000-0000-0000-000000000002",
@@ -150,7 +150,7 @@ def compute_student_metrics(students: list[Student], timeframe: str = "all") -> 
     return result
 ```
 
-**`@computed_column_endpoint` parameters:**
+**`@computed_attribute_endpoint` parameters:**
 
 All parameters from `@action_endpoint`, plus:
 

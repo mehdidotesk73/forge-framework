@@ -33,9 +33,7 @@ path = "./endpoint_repos/student_endpoints"
 [[apps]]
 name = "student-manager"
 path = "./apps/student-manager"
-port = "5200"
 
 [[apps]]
 name = "analytics"
 path = "./apps/analytics"
-port = "5300"

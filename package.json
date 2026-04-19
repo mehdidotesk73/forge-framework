@@ -6,7 +6,7 @@
     "examples/student-manager/apps/student-manager",
     "examples/student-manager/apps/analytics",
     "examples/stock-monitor/apps/monitor",
-    "examples/forge-webapp/apps/forge-webapp"
+    "packages/forge-suite/forge-webapp/apps/forge-webapp"
   ],
   "scripts": {
     "build:ts": "npm run build --workspace=packages/forge-ts"

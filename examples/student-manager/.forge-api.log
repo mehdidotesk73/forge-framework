@@ -1,0 +1,7 @@
+Forge dev server — student-manager
+  API:    http://127.0.0.1:61596/api/health
+  Docs:   http://127.0.0.1:61596/docs
+  App : http://127.0.0.1:61597/
+  App : cd ./apps/analytics && npm run dev  (run npm run build to serve here)
+
+Press Ctrl+C to stop

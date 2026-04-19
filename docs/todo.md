@@ -4,6 +4,44 @@ Items are organized by layer. Priority: `[HIGH]`, `[MED]`, `[LOW]`.
 
 ---
 
+## Release & Distribution
+
+This section tracks the two-track plan for (a) publishing forge packages to PyPI/npm and (b) enabling forge projects to be built and distributed as standalone apps.
+
+### Track 1 — Release capability (forge-suite → PyPI, forge-ts → npm)
+
+- [x] `[HIGH]` **1. Fix forge-webapp vite.config.ts aliases** — remove stale `resolve.alias` block and unused `import { resolve } from "path"` from `packages/forge-suite/forge-webapp/apps/forge-webapp/vite.config.ts`. Same cleanup already applied to all four example apps.
+
+- [x] `[HIGH]` **2. Build forge-webapp to static files** — run `npm run build` in forge-webapp and copy the `dist/` output into `packages/forge-suite/forge_suite/webapp_dist/`. This is the pre-built asset that will ship inside the wheel.
+
+- [x] `[HIGH]` **3. Include webapp_dist in the wheel** — update `packages/forge-suite/pyproject.toml` to declare `webapp_dist/**` as package data so hatchling includes it in the built wheel.
+
+- [x] `[HIGH]` **4. Switch cli.py from `npm run dev` to StaticFiles** — replace the `subprocess.Popen(["npm", "run", "dev"], ...)` frontend process in `forge_suite/cli.py` with FastAPI `StaticFiles` mounting from `webapp_dist/` on the same backend port. No Node.js required at runtime.
+
+- [x] `[HIGH]` **5. Add forge-webapp build step to release.sh** — before building the forge-suite wheel, `release.sh` must run `npm run build` inside `forge-webapp/apps/forge-webapp/` and copy `dist/` to `forge_suite/webapp_dist/`.
+
+- [x] `[MED]` **6. Verify forge-ts forge.css lands in dist/** — confirm that `npm run build` in `packages/forge-ts` produces `dist/forge.css` (or a copy) so consumers that `import "@forge-framework/ts/forge.css"` after a real npm install get the file. Update `package.json` exports and build config if needed.
+
+### Track 2 — Forge project build & distribution
+
+- [x] `[HIGH]` **7. Add `port` field to `[[apps]]` in forge.toml** — extend the `AppConfig` dataclass and TOML schema to accept an optional `port` per app. Used by both `forge dev serve` (Vite) and `forge build` (static serving).
+
+- [x] `[HIGH]` **8. `forge build` command** — new CLI command that, for each `[[apps]]` entry in `forge.toml`, runs `npm run build` inside the app directory and copies the output to `.forge/apps/<name>/dist/`. Prerequisite for static serving and export.
+
+- [x] `[HIGH]` **9. Mount built app dist/ in FastAPI** — update `forge dev serve` to detect `.forge/apps/<name>/dist/` and mount each as `StaticFiles` at a dedicated path (e.g. `/<name>/`), so the backend is the single process for end users.
+
+- [x] `[HIGH]` **10. `forge export` command** — zip the project directory including source, `forge.toml`, `.forge/data/`, `.forge/artifacts/`, `.forge/generated/`, and any pre-built `.forge/apps/*/dist/` into a portable `<project-name>.forgepkg` archive. Recipients unzip, install forge-suite, and run `forge dev serve` — no `setup.sh`, no UUID reminting.
+
+### Track 3 — Provider interfaces (foundation for auth & database)
+
+- [x] `[MED]` **11. `[auth]` and `[database]` stubs in forge.toml** — extend `ProjectConfig` and the TOML schema to parse `[auth]` and `[database]` sections. Default values: `provider = "none"` and `provider = "local"`. No behaviour change yet — just establishes the config surface.
+
+- [x] `[MED]` **12. `AuthProvider` and `DatabaseProvider` Protocol interfaces** — add `forge/providers/auth.py` and `forge/providers/database.py` with `Protocol` definitions and a `NoneAuthProvider` / `LocalDatabaseProvider` no-op implementation. Provider instances created from config at startup.
+
+- [x] `[MED]` **13. StorageEngine accepts DatabaseProvider** — refactor `StorageEngine.__init__` to accept an optional `DatabaseProvider`. Defaults to current DuckDB/Parquet behaviour via `LocalDatabaseProvider`. No pipeline/model/endpoint call sites change.
+
+---
+
 ## System / Cross-Cutting
 
 - [ ] `[LOW]` **Authentication providers** — pluggable auth system supporting general login (email/password, OAuth2 social) and high-security work (MFA, API key rotation, session scoping). Should integrate at the dev server level and be declarable in `forge.toml` (e.g. `[auth] provider = "oauth2"`). Endpoint-level authorization decorators (e.g. `@requires_role("admin")`) should be built on top.

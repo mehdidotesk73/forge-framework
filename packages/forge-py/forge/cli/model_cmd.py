@@ -40,6 +40,25 @@ def model_build() -> None:
         console.print(f"    TypeScript: {r['typescript_sdk']}")
 
 
+@model_group.command("create")
+@click.argument("dataset_id")
+@click.argument("model_name")
+@click.option("--mode", default="snapshot", show_default=True,
+              type=click.Choice(["snapshot", "immutable"]),
+              help="snapshot (mutable) or immutable (read-only)")
+def model_create(dataset_id: str, model_name: str, mode: str) -> None:
+    """Scaffold a new model class from an existing dataset."""
+    from forge.config import find_project_root
+    from forge.operations.scaffolding import create_model
+    root = find_project_root()
+    result = create_model(root, dataset_id, model_name, mode)
+    if "error" in result:
+        console.print(f"[red]✗[/red] {result['error']}")
+        raise SystemExit(1)
+    console.print(f"[green]✓[/green] Created [bold]{result['name']}[/bold] ({mode})")
+    console.print(f"  {result['file']}")
+
+
 @model_group.command("reinitialize")
 @click.argument("object_type")
 def model_reinitialize(object_type: str) -> None:

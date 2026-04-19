@@ -79,7 +79,7 @@ class MyObject:
 
 ### API developer
 
-You write functions decorated with `@action_endpoint` or `@computed_column_endpoint`. You import from the generated Python SDK. You do not write UI code.
+You write functions decorated with `@action_endpoint` or `@computed_attribute_endpoint`. You import from the generated Python SDK. You do not write UI code.
 
 ```python
 from forge.control import action_endpoint

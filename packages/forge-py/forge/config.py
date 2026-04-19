@@ -44,6 +44,17 @@ class EndpointRepoConfig(BaseModel):
 class AppConfig(BaseModel):
     name: str
     path: str
+    port: int | None = None
+
+
+class AuthConfig(BaseModel):
+    provider: str = "none"  # "none" | future: "clerk", "supabase", ...
+    options: dict[str, str] = Field(default_factory=dict)
+
+
+class DatabaseConfig(BaseModel):
+    provider: str = "local"  # "local" | future: "supabase", "postgres", ...
+    options: dict[str, str] = Field(default_factory=dict)
 
 
 class ProjectConfig(BaseModel):
@@ -55,6 +66,8 @@ class ProjectConfig(BaseModel):
     models: list[ModelConfig] = Field(default_factory=list)
     endpoint_repos: list[EndpointRepoConfig] = Field(default_factory=list)
     apps: list[AppConfig] = Field(default_factory=list)
+    auth: AuthConfig = Field(default_factory=AuthConfig)
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
 
     @property
     def pipeline_by_name(self) -> dict[str, PipelineConfig]:
@@ -96,6 +109,8 @@ def load_config(project_root: Path | None = None) -> tuple[ProjectConfig, Path]:
         models=[ModelConfig(**m) for m in raw.get("models", [])],
         endpoint_repos=[EndpointRepoConfig(**r) for r in raw.get("endpoint_repos", [])],
         apps=[AppConfig(**a) for a in raw.get("apps", [])],
+        auth=AuthConfig(**raw.get("auth", {})),
+        database=DatabaseConfig(**raw.get("database", {})),
     )
     return config, root
 

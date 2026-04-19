@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEBAPP_DIR="$REPO_ROOT/examples/forge-webapp"
+WEBAPP_DIR="$REPO_ROOT/packages/forge-suite/forge-webapp"
 VENV="$REPO_ROOT/.venv"
 
 echo "=== Forge Suite Setup ==="
@@ -44,7 +44,7 @@ bash setup.sh
 
 # ── Make launch script executable ────────────────────────────────────────────
 
-chmod +x "$REPO_ROOT/forge-suite.command"
+chmod +x "$REPO_ROOT/forge-suite-webapp.command" "$REPO_ROOT/forge-suite-cli.command"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
@@ -53,8 +53,9 @@ echo "✓ Setup complete."
 echo ""
 echo "To start Forge Suite:"
 echo ""
-echo "  Double-click:  forge-suite.command"
-echo "  CLI:           source .venv/bin/activate && forge-suite serve"
+echo "  Double-click:  forge-suite-webapp.command   (opens the management UI)"
+echo "  CLI menu:      forge-suite-cli.command       (project lifecycle commands)"
+echo "  Terminal:      source .venv/bin/activate && forge-suite serve"
 echo ""
 echo "Press Enter to close this window."
 read -r

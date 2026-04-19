@@ -32,7 +32,7 @@ type PriceRow = {
 };
 
 export function PriceChart() {
-  const [maWindow, setMaWindow] = useState(7);
+  const [maWindow, setMaWindow] = useState(180);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -190,12 +190,16 @@ export function PriceChart() {
                 labelStyle={{ color: "#94a3b8" }}
                 formatter={(value: number, name: string) => [
                   `$${value?.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
-                  name === "close" ? "Close" : `MA (${maWindow}d)`,
+                  name === "close"
+                    ? "BTC (Close)"
+                    : `BTC (Close) - MA (${maWindow}d)`,
                 ]}
               />
               <Legend
                 formatter={(value) =>
-                  value === "close" ? "Close" : `MA (${maWindow}d)`
+                  value === "close"
+                    ? "BTC (Close)"
+                    : `BTC (Close) - MA (${maWindow}d)`
                 }
                 wrapperStyle={{ fontSize: 12, color: "#94a3b8", paddingTop: 8 }}
               />

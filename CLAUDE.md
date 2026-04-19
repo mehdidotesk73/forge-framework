@@ -12,22 +12,23 @@ A monorepo for the **Forge framework** — an installable layered data applicati
 packages/forge-py/    Python package (pip install forge-framework)  CLI: `forge`
 packages/forge-ts/    TypeScript package (@forge-framework/ts)       React widget library
 packages/forge-suite/ Python package (pip install forge-suite)      CLI: `forge-suite serve`; starts backend + UI
-examples/student-manager/   Example 1: snapshot objects, multi-app, action + computed endpoints
-examples/stock-monitor/     Example 2: stream objects, scheduled pipeline, chart
-examples/forge-webapp/      Forge project that provides the management UI backend for forge-suite
+examples/student-manager/              Example 1: snapshot objects, multi-app, action + computed endpoints
+examples/stock-monitor/                Example 2: stream objects, scheduled pipeline, chart
+packages/forge-suite/forge-webapp/     Forge project that provides the management UI backend for forge-suite
 ```
 
 ## Starting Forge Suite (management UI)
 
 ```bash
-# Double-click forge-suite.command in Finder, or run from terminal:
-bash forge-suite.command
-# First run creates the venv, installs deps, and starts both servers automatically.
-# Opens http://localhost:5174 in the browser when ready.
+# One-time setup (creates venv, installs deps, makes .command files executable):
+bash setup.command
 
-# After first run, also available as a CLI command (venv must be active):
+# After setup — double-click in Finder or run from terminal:
+bash forge-suite-webapp.command   # opens http://localhost:5174
+
+# Also available as a CLI command (venv must be active):
 source .venv/bin/activate
-forge-suite serve
+forge-suite serve                 # single process: backend + pre-built UI on :5174
 ```
 
 ## Setup (framework development)
@@ -61,6 +62,8 @@ forge dataset list / inspect <id>
 forge pipeline run <name> / dag / history <name>
 forge model build / reinitialize <Type>
 forge endpoint build [--repo <name>]
+forge build                        # npm run build for each [[apps]] entry
+forge export                       # zip project into <name>.forgepkg
 forge dev serve [--app <name>] [--port N]
 forge upgrade [--dry-run]
 forge version
@@ -84,11 +87,15 @@ forge version
 | `packages/forge-py/forge/model/builder.py` | `forge model build`; snapshot creation; calls both codegen modules |
 | `packages/forge-py/forge/model/codegen_python.py` | Jinja2 → Python SDK (dataclass + Set class with CRUD for snapshots) |
 | `packages/forge-py/forge/model/codegen_typescript.py` | Jinja2 → TypeScript SDK (interface + `load<Type>Set`) |
-| `packages/forge-py/forge/control/decorator.py` | `@action_endpoint` and `@computed_column_endpoint`; global endpoint registry |
+| `packages/forge-py/forge/control/decorator.py` | `@action_endpoint` and `@computed_attribute_endpoint`; global endpoint registry |
 | `packages/forge-py/forge/control/builder.py` | Walks endpoint repos, emits `.forge/artifacts/endpoints.json` |
 | `packages/forge-py/forge/server/app.py` | FastAPI app; mounts all API routes; serves object sets and endpoints |
 | `packages/forge-py/forge/scheduler/scheduler.py` | APScheduler wrapper; fires pipelines on cron schedule |
 | `packages/forge-py/forge/migrations/base.py` | `@register_migration` decorator; `MigrationRunner` |
+| `packages/forge-py/forge/providers/auth.py` | `AuthProvider` Protocol + `NoAuthProvider` no-op; `make_auth_provider()` |
+| `packages/forge-py/forge/providers/database.py` | `DatabaseProvider` Protocol + `LocalDatabaseProvider`; `make_database_provider()` |
+| `packages/forge-py/forge/cli/dev_cmd.py` | `forge dev serve`; `_ensure_forge_ts_linked()` auto-symlinks `@forge-framework/ts` for out-of-monorepo projects |
+| `packages/forge-suite/forge_suite/cli.py` | `forge-suite serve`; `_bootstrap_webapp()` auto-runs first-run setup |
 | `packages/forge-ts/src/widgets/ObjectTable.tsx` | Smart table; fetches computed columns; resolves state bindings |
 | `packages/forge-ts/src/widgets/Form.tsx` | Auto-renders from call form descriptor fetched by endpoint UUID |
 | `packages/forge-ts/src/types/index.ts` | All shared types: `ForgeObjectSet`, `ForgeAction`, `InteractionConfig`, `StateBinding` |
@@ -134,3 +141,33 @@ from forge.migrations import register_migration
 def migrate_foo_to_bar(project_root):
     ...
 ```
+
+## Debugging a Forge project
+
+Use the `/debug` slash command when helping a user diagnose a problem in their Forge project. It instructs Claude Code to:
+- Diagnose using read-only tools first (no writes)
+- Never re-run `setup.sh` or regenerate dataset UUIDs
+- Never edit framework files (`packages/forge-py/`, `packages/forge-ts/`, `packages/forge-suite/`) unless the user explicitly asks
+- Never edit `.forge/artifacts/` or `.forge/generated/` by hand
+
+See `.claude/commands/debug.md` for the full rule set.
+
+## Documentation maintenance
+
+Whenever you make a change to framework behaviour, CLI commands, UI flows, or any user-facing feature, update the relevant docs in `docs/` in the same session — do not defer doc updates to a separate pass. This applies especially to changes that affect developers building Forge projects (pipelines, models, endpoints, app scaffold, build commands, Forge Suite UI flows). If a doc describes behaviour that no longer matches the code, correct the doc before closing the task.
+
+## Documentation
+
+Full developer documentation lives in `docs/`:
+
+| File | Contents |
+|------|----------|
+| `docs/forge-overview.md` | Architecture, storage, build sequence |
+| `docs/pipeline-layer.md` | `@pipeline` decorator, scheduling, run history |
+| `docs/model-layer.md` | `@forge_model`, field defs, snapshot vs. stream |
+| `docs/control-layer.md` | `@action_endpoint`, business logic patterns |
+| `docs/view-layer.md` | React widgets, generated TS SDK |
+| `docs/new-project-guide.md` | End-to-end guide for building a new Forge project |
+| `docs/forge-suite-cli.md` | Full lifecycle via Forge Suite CLI |
+| `docs/forge-suite-webapp.md` | Full lifecycle via Forge Suite webapp UI |
+| `docs/forge-suite-integration.md` | Registering projects with Forge Suite |

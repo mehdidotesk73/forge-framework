@@ -229,7 +229,7 @@ Wrap external calls (HTTP fetches, DB queries) in try/except inside your pipelin
 The Pipeline layer must **never**:
 
 - Import `@forge_model`-decorated classes
-- Import `@action_endpoint` or `@computed_column_endpoint` decorators
+- Import `@action_endpoint` or `@computed_attribute_endpoint` decorators
 - Import anything from `forge.control` or `packages/forge-ts`
 - Construct HTTP requests or call external APIs (unless fetching raw source data)
 - Reference widget types or UI concerns

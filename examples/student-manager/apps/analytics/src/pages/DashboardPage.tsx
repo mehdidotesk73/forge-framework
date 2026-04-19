@@ -13,8 +13,8 @@ import {
   Container,
   ObjectTable,
   type ForgeObjectSet,
+  fetchObjectSet,
 } from "@forge-framework/ts";
-import { fetchObjectSet } from "@forge-framework/ts/runtime";
 
 type StudentRow = {
   id: string; name: string; major: string; status: string; enrolled_at: string;

@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Generator
 
-_ENDPOINT_REGISTRY: dict[str, "ActionEndpointDefinition | ComputedColumnEndpointDefinition | StreamingEndpointDefinition"] = {}
+_ENDPOINT_REGISTRY: dict[str, "ActionEndpointDefinition | ComputedAttributeEndpointDefinition | StreamingEndpointDefinition"] = {}
 
 
 @dataclass
@@ -39,7 +39,7 @@ class ActionEndpointDefinition:
 
 
 @dataclass
-class ComputedColumnEndpointDefinition:
+class ComputedAttributeEndpointDefinition:
     id: str
     name: str
     func: Callable
@@ -52,7 +52,7 @@ class ComputedColumnEndpointDefinition:
 
     @property
     def kind(self) -> str:
-        return "computed_column"
+        return "computed_attribute"
 
 
 @dataclass
@@ -126,7 +126,7 @@ def action_endpoint(
     return decorator
 
 
-def computed_column_endpoint(
+def computed_attribute_endpoint(
     object_type: str,
     columns: list[str],
     params: list[dict[str, Any]] | None = None,
@@ -141,7 +141,7 @@ def computed_column_endpoint(
         ep_id = endpoint_id or str(uuid.uuid4())
         parsed_params = _parse_params(params or [])
 
-        defn = ComputedColumnEndpointDefinition(
+        defn = ComputedAttributeEndpointDefinition(
             id=ep_id,
             name=ep_name,
             func=func,

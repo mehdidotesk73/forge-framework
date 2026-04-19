@@ -5,7 +5,7 @@
 
 const DEFAULT_BASE_URL =
   typeof window !== "undefined"
-    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    ? window.location.origin
     : "http://localhost:8000";
 
 let _baseUrl = DEFAULT_BASE_URL;

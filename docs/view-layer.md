@@ -19,15 +19,15 @@ npm install @forge-framework/ts
 
 ### Configure the base URL
 
-Call `configureForge` once at app startup (e.g., in `main.tsx`):
+In a browser, the client defaults to `window.location.origin`. When the app is served via the Vite dev server (as Forge Suite does), all `/api/*` and `/endpoints/*` requests are automatically proxied to the project backend — no configuration needed.
+
+Only call `configureForge` if you need to override the target (e.g., pointing directly at a remote backend):
 
 ```typescript
 import { configureForge } from "@forge-framework/ts";
 
-configureForge({ baseUrl: "http://localhost:8000" });
+configureForge({ baseUrl: "https://my-server.example.com" });
 ```
-
-In production, omit the call or set the URL to your deployed server. In a browser the default is `window.location.origin`; in a Node/SSR context the default is `http://localhost:8000`.
 
 ---
 

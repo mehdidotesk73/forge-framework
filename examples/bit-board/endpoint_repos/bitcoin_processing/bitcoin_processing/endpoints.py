@@ -4,14 +4,14 @@ Control Layer — bitcoin_processing
 
 from __future__ import annotations
 
-from forge.control import computed_column_endpoint
+from forge.control import computed_attribute_endpoint
 from models.bitcoin_price import BitcoinPrice
 
 GET_BITCOIN_METRICS_ID = "2fecbcfc-e136-49c1-aa5c-c3a36c608169"
-MOVING_AVERAGE_WINDOW = 7  # default window in days
+MOVING_AVERAGE_WINDOW = 180  # default window in days
 
 
-@computed_column_endpoint(
+@computed_attribute_endpoint(
     object_type="BitcoinPrice",
     columns=["moving_average"],
     endpoint_id=GET_BITCOIN_METRICS_ID,

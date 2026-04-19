@@ -5,7 +5,10 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from forge.providers.database import DatabaseProvider
 
 import threading
 
@@ -99,12 +102,13 @@ class InputHandle:
 class StorageEngine:
     """Manages all datasets stored as Parquet files with a DuckDB catalog."""
 
-    def __init__(self, forge_dir: Path) -> None:
+    def __init__(self, forge_dir: Path, db_provider: "DatabaseProvider | None" = None) -> None:
         self.forge_dir = forge_dir
         self.data_dir = forge_dir / "data"
         self.db_path = forge_dir / "forge.duckdb"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        self._db_provider = db_provider  # None → local Parquet/DuckDB (default)
         self._ensure_schema()
 
     def get_connection(self) -> duckdb.DuckDBPyConnection:
