@@ -7,7 +7,8 @@ from pathlib import Path
 
 def stream_command(cmd: list[str], cwd: Path):
     """Run a subprocess and yield (event, data) tuples for each output line."""
-    import select
+    import queue
+    import threading
 
     yield ("status", f"$ {' '.join(cmd)}")
     try:
@@ -19,25 +20,25 @@ def stream_command(cmd: list[str], cwd: Path):
             text=True,
             bufsize=1,
         )
-        stdout_done = False
-        stderr_done = False
-        while not (stdout_done and stderr_done):
-            reads = []
-            if not stdout_done:
-                reads.append(proc.stdout)
-            if not stderr_done:
-                reads.append(proc.stderr)
-            readable, _, _ = select.select(reads, [], [], 0.1)
-            for stream in readable:
-                line = stream.readline()
-                if not line:
-                    if stream is proc.stdout:
-                        stdout_done = True
-                    else:
-                        stderr_done = True
-                else:
-                    event = "stdout" if stream is proc.stdout else "stderr"
-                    yield (event, line.rstrip())
+        q: queue.Queue = queue.Queue()
+        _DONE = object()
+
+        def _reader(stream, event_name):
+            for line in stream:
+                q.put((event_name, line.rstrip()))
+            q.put(_DONE)
+
+        threading.Thread(target=_reader, args=(proc.stdout, "stdout"), daemon=True).start()
+        threading.Thread(target=_reader, args=(proc.stderr, "stderr"), daemon=True).start()
+
+        done_count = 0
+        while done_count < 2:
+            item = q.get()
+            if item is _DONE:
+                done_count += 1
+            else:
+                yield item
+
         proc.wait()
         if proc.returncode == 0:
             yield ("status", f"Exited with code {proc.returncode}")
