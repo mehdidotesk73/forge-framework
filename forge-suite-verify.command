@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Forge Suite — start the management UI and open it in the browser.
-# Double-click on macOS, or run: bash forge-suite-webapp.command
+# Forge Suite — release verification.
+# Serves the pre-built production bundle (no live reload).
+# Use this to smoke-test a release build before shipping, not for daily dev.
+# For daily development, use forge-suite-dev.command instead.
+# Double-click on macOS, or run: bash forge-suite-verify.command
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

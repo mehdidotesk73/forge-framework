@@ -20,16 +20,37 @@ packages/forge-suite/forge-webapp/     Forge project that provides the managemen
 ## Starting Forge Suite (management UI)
 
 ```bash
-# One-time setup (creates venv, installs deps, makes .command files executable):
+# One-time setup (creates venv, installs deps, builds frontend, makes .command files executable):
 bash setup.command
 
-# After setup — double-click in Finder or run from terminal:
-bash forge-suite-webapp.command   # opens http://localhost:5174
+# Daily development — double-click in Finder or run from terminal:
+bash forge-suite-dev.command      # API on :7999 + Vite dev server on :5174 (live reload)
 
-# Also available as a CLI command (venv must be active):
+# Release verification — smoke-test the pre-built bundle before shipping:
+bash forge-suite-verify.command   # single process: backend + pre-built UI on :5174
+
+# End users (pip install forge-suite) — terminal only, no .command files:
 source .venv/bin/activate
 forge-suite serve                 # single process: backend + pre-built UI on :5174
 ```
+
+### Who uses which workflow
+
+**Forge Suite backend developer** — works on `packages/forge-suite/` (server, CLI, scheduler) and/or `packages/forge-py/` (core framework):
+- Daily driver: `forge-suite-dev.command` — starts backend on :7999 + Vite UI on :5174 so backend changes are immediately testable against the live frontend
+- Pre-release: run `setup.command` then `forge-suite-verify.command` to smoke-test the production bundle before tagging a release
+- Never edits the Vite app source; uses the Vite UI purely as a test client
+
+**Forge Suite frontend developer** — works on `packages/forge-suite/forge-webapp/apps/forge-webapp/src/` (the React management UI):
+- Daily driver: `forge-suite-dev.command` — Vite live-reloads on every save; API calls proxy automatically to the backend on :7999
+- Pre-release: `forge-suite-verify.command` to confirm the built bundle looks right in production mode
+- Does not need to touch Python; backend is treated as a stable API
+
+**Forge project developer** — a *user* of the framework who builds their own data application (pipelines, models, endpoints, React app) in a separate project directory:
+- `pip install forge-framework forge-suite` — no clone of this repo, no `.command` files
+- Uses `forge` CLI in their project: `forge pipeline run`, `forge model build`, `forge endpoint build`, `forge dev serve`
+- Uses `forge-suite serve` (terminal) or `forge-suite-cli.command` (if given separately) to manage their project via the Suite UI
+- Never works inside the `forge-framework` monorepo
 
 ## Setup (framework development)
 

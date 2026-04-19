@@ -56,7 +56,7 @@ cp -r "$DIST_SRC" "$DIST_DST"
 
 # ── Make launch script executable ────────────────────────────────────────────
 
-chmod +x "$REPO_ROOT/forge-suite-webapp.command" "$REPO_ROOT/forge-suite-webapp-dev.command" "$REPO_ROOT/forge-suite-cli.command"
+chmod +x "$REPO_ROOT/forge-suite-dev.command" "$REPO_ROOT/forge-suite-verify.command" "$REPO_ROOT/forge-suite-cli.command"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
@@ -65,8 +65,9 @@ echo "✓ Setup complete."
 echo ""
 echo "To start Forge Suite:"
 echo ""
-echo "  Double-click:  forge-suite-webapp.command   (opens the management UI)"
-echo "  CLI menu:      forge-suite-cli.command       (project lifecycle commands)"
+echo "  Double-click:  forge-suite-dev.command        (daily dev — live reload at :5174)"
+echo "  Double-click:  forge-suite-verify.command     (release verification — pre-built bundle)"
+echo "  Double-click:  forge-suite-cli.command        (project lifecycle CLI menu)"
 echo "  Terminal:      source .venv/bin/activate && forge-suite serve"
 echo ""
 echo "Press Enter to close this window."

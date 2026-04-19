@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Forge Suite — frontend dev mode with live reload.
+# Forge Suite — daily development workflow (backend + frontend, live reload).
 # Starts the API backend on :7999 and the Vite dev server on :5174.
-# Use this instead of forge-suite-webapp.command when editing source under
-# packages/forge-suite/forge-webapp/apps/forge-webapp/src/.
+# Use this for all forge-suite development — backend and frontend alike.
+# To verify a release build, use forge-suite-verify.command instead.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
