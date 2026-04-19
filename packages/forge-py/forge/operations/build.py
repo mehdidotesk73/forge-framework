@@ -7,18 +7,24 @@ from pathlib import Path
 
 def stream_command(cmd: list[str], cwd: Path):
     """Run a subprocess and yield (event, data) tuples for each output line."""
+    import os
     import queue
     import threading
 
     yield ("status", f"$ {' '.join(cmd)}")
     try:
+        env = os.environ.copy()
+        env["PYTHONUTF8"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
         proc = subprocess.Popen(
             cmd,
             cwd=str(cwd),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
             bufsize=1,
+            env=env,
         )
         q: queue.Queue = queue.Queue()
         _DONE = object()

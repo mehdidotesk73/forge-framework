@@ -54,11 +54,11 @@ def pipeline_run(name: str) -> None:
             result = runner.run(defn, config_name=name)
     except Exception as exc:
         import traceback
-        console.print(f"[red]✗ Pipeline failed:[/red] {exc}")
+        console.print(f"[red]Pipeline failed:[/red] {exc}")
         console.print("[dim]" + traceback.format_exc() + "[/dim]")
         raise SystemExit(1) from exc
 
-    console.print(f"[green]✓ Success[/green] ({result['duration_seconds']:.2f}s)")
+    console.print(f"[green]OK[/green] ({result['duration_seconds']:.2f}s)")
     if result.get("rows_written"):
         for output_name, count in result["rows_written"].items():
             console.print(f"  {output_name}: {count:,} rows written")
@@ -118,9 +118,9 @@ def pipeline_create(name: str) -> None:
     root = find_project_root()
     result = create_pipeline(root, name)
     if "error" in result:
-        console.print(f"[red]✗[/red] {result['error']}")
+        console.print(f"[red]Error:[/red] {result['error']}")
         raise SystemExit(1)
-    console.print(f"[green]✓[/green] Created [bold]{result['name']}[/bold]")
+    console.print(f"[green]OK[/green] Created [bold]{result['name']}[/bold]")
     console.print(f"  {result['file']}")
 
 
