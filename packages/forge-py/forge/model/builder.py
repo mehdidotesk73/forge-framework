@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -49,6 +50,15 @@ class ModelBuilder:
                 snapshot_dataset_id = snap.id
             else:
                 snapshot_dataset_id = existing_snapshot
+                # Sync any new columns added to the backing dataset into the snapshot
+                import pandas as pd
+                snap_df = self.engine.read_dataset(snapshot_dataset_id)
+                back_df = self.engine.read_dataset(defn.backing_dataset_id)
+                new_cols = [c for c in back_df.columns if c not in snap_df.columns]
+                if new_cols:
+                    common = [c for c in snap_df.columns if c in back_df.columns]
+                    merged = snap_df.merge(back_df[common + new_cols], on=common, how="left")
+                    self.engine.write_dataset(snapshot_dataset_id, merged)
             defn.snapshot_dataset_id = snapshot_dataset_id
 
         # Build schema artifact from live dataset
@@ -68,6 +78,7 @@ class ModelBuilder:
                         "display_hint": f.display_hint,
                     })
 
+        from datetime import datetime, timezone
         artifact = {
             "name": defn.class_name,
             "mode": defn.mode,
@@ -77,6 +88,7 @@ class ModelBuilder:
             "primary_key": next(
                 (f.name for f in defn.fields if f.primary_key), None
             ),
+            "built_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # Write schema artifact
@@ -116,9 +128,25 @@ class ModelBuilder:
 
     def _load_definition(self, model_cfg: ModelConfig) -> ForgeModelDefinition:
         root_str = str(self.root)
-        if root_str not in sys.path:
-            sys.path.insert(0, root_str)
-        mod = importlib.import_module(model_cfg.module)
+
+        # Load using a spec rooted at self.root to avoid sys.modules cache
+        # conflicts when multiple projects share top-level package names (e.g. "models").
+        parts = model_cfg.module.split(".")
+        mod_path = self.root.joinpath(*parts).with_suffix(".py")
+        spec = importlib.util.spec_from_file_location(
+            f"_forge_project_{self.root.name}.{model_cfg.module}",
+            mod_path,
+            submodule_search_locations=[str(self.root / parts[0])] if len(parts) > 1 else [],
+        )
+        if spec is None or spec.loader is None:
+            # Fall back to sys.path-based import
+            if root_str not in sys.path:
+                sys.path.insert(0, root_str)
+            mod = importlib.import_module(model_cfg.module)
+        else:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+
         cls = getattr(mod, model_cfg.class_name)
         if not hasattr(cls, "_forge_model"):
             raise ValueError(

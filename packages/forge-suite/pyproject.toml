@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "forge-suite"
+version = "0.1.0"
+description = "Forge framework + management UI — single installable package"
+requires-python = ">=3.11"
+dependencies = [
+    "forge-framework>=0.1.0",
+]
+
+[project.scripts]
+forge-suite = "forge_suite.cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["forge_suite"]

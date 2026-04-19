@@ -36,6 +36,11 @@ class {{ name }}:
         import dataclasses
         return dataclasses.asdict(self)
 
+    @classmethod
+    def to_dataframe(cls, objects) -> "pd.DataFrame":
+        import dataclasses
+        return pd.DataFrame([dataclasses.asdict(o) for o in objects])
+
 
 class {{ name }}Set:
     \"\"\"{{ mode | capitalize }} object set for {{ name }}.\"\"\"
@@ -55,8 +60,11 @@ class {{ name }}Set:
     def __len__(self) -> int:
         return len(self._objects)
 
-    def to_df(self) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self._rows)
+
+    def to_df(self) -> pd.DataFrame:
+        return self.to_dataframe()
 
     @classmethod
     def _load(cls, engine: Any) -> "{{ name }}Set":

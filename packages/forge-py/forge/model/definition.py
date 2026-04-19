@@ -69,6 +69,8 @@ class ForgeStreamModel:
     def all(cls, *, engine: Any = None) -> list: ...  # type: ignore[empty-body]
     @classmethod
     def filter(cls, *, engine: Any = None, **kwargs: Any) -> list: ...  # type: ignore[empty-body]
+    @classmethod
+    def to_dataframe(cls, objects: Any) -> Any: ...  # type: ignore[empty-body]
     def _to_dict(self) -> dict[str, Any]: ...  # type: ignore[empty-body]
 
 
@@ -280,6 +282,11 @@ def _mix_in_class_methods(cls: type, defn: ForgeModelDefinition, mode: str) -> N
     def _to_dict(self) -> dict[str, Any]:
         return {fname: getattr(self, fname, None) for fname in field_names}
 
+    @classmethod  # type: ignore[misc]
+    def to_dataframe(klass, objects) -> Any:
+        import pandas as pd
+        return pd.DataFrame([o._to_dict() for o in objects])
+
     def __repr__(self) -> str:
         pk_val = getattr(self, pk_name, "?") if pk_name else "?"
         return f"{cls.__name__}({pk_name}={pk_val!r})"
@@ -339,6 +346,7 @@ def _mix_in_class_methods(cls: type, defn: ForgeModelDefinition, mode: str) -> N
     cls.get_many     = get_many      # type: ignore[attr-defined]
     cls.filter       = filter        # type: ignore[attr-defined]
     cls._to_dict     = _to_dict      # type: ignore[attr-defined]
+    cls.to_dataframe = to_dataframe  # type: ignore[attr-defined]
     cls.__repr__     = __repr__      # type: ignore[assignment]
 
 

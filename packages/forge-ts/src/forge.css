@@ -298,6 +298,11 @@
 .forge-selector select:hover { border-color: #5a5a72; }
 .forge-selector select:focus { border-color: var(--forge-accent); box-shadow: 0 0 0 3px rgba(232,131,58,0.15); }
 .forge-selector select option { background: var(--forge-bg-card); color: var(--forge-text); }
+.forge-selector.forge-selector-sm select { font-size: 11px; padding: 2px 4px; }
+.forge-selector.forge-selector-md select { font-size: 13px; padding: 6px 12px; }
+.forge-selector.forge-selector-lg select { font-size: 14px; padding: 9px 14px; }
+.forge-selector.forge-selector-ghost select { border-color: transparent; background: transparent; }
+.forge-selector.forge-selector-ghost select:hover { border-color: var(--forge-border); }
 
 .forge-toggle { flex-direction: row; align-items: center; gap: 8px; }
 .forge-toggle label { text-transform: none; font-size: 13px; letter-spacing: 0; }
@@ -345,9 +350,46 @@
 .forge-object-table tbody tr:last-child td { border-bottom: none; }
 .forge-object-table tbody tr { transition: background 0.1s; cursor: pointer; }
 .forge-object-table tbody tr:hover { background: var(--forge-bg-surface); }
-.forge-row-selected { background: var(--forge-accent-light) !important; }
+.forge-row-selected { background: rgba(255, 255, 255, 0.05); }
+.forge-row-selected:hover { background: rgba(255, 255, 255, 0.08); }
 .forge-table-compact  td, .forge-table-compact  th { padding-top: 7px; padding-bottom: 7px; }
 .forge-table-comfortable td, .forge-table-comfortable th { padding-top: 16px; padding-bottom: 16px; }
+.forge-table-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-muted, #7b82a6);
+}
+.forge-table-selection-clear {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--text-muted, #7b82a6);
+  cursor: pointer;
+}
+.forge-table-selection-copy {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--accent, #5ba3d9);
+  cursor: pointer;
+}
+.forge-table-copy-select {
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 4px;
+  border: 1px solid var(--border, #2d3148);
+  border-radius: 4px;
+  background: var(--bg-panel, #1a1d27);
+  color: var(--text, #e2e4ef);
+  cursor: pointer;
+}
 
 /* ── ObjectCard ──────────────────────────────────────────────────────────── */
 .forge-object-card {

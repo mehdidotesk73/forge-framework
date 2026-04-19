@@ -11,11 +11,26 @@ A monorepo for the **Forge framework** — an installable layered data applicati
 ```
 packages/forge-py/    Python package (pip install forge-framework)  CLI: `forge`
 packages/forge-ts/    TypeScript package (@forge-framework/ts)       React widget library
+packages/forge-suite/ Python package (pip install forge-suite)      CLI: `forge-suite serve`; starts backend + UI
 examples/student-manager/   Example 1: snapshot objects, multi-app, action + computed endpoints
 examples/stock-monitor/     Example 2: stream objects, scheduled pipeline, chart
+examples/forge-webapp/      Forge project that provides the management UI backend for forge-suite
 ```
 
-## Setup (first time)
+## Starting Forge Suite (management UI)
+
+```bash
+# Double-click forge-suite.command in Finder, or run from terminal:
+bash forge-suite.command
+# First run creates the venv, installs deps, and starts both servers automatically.
+# Opens http://localhost:5174 in the browser when ready.
+
+# After first run, also available as a CLI command (venv must be active):
+source .venv/bin/activate
+forge-suite serve
+```
+
+## Setup (framework development)
 
 ```bash
 # Python — create a venv then install everything the IDE needs

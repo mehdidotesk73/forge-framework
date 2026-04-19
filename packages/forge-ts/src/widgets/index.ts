@@ -18,7 +18,10 @@ export {
   Selector,
   MultiSelector,
   FileUpload,
+  TextArea,
+  RadioGroup,
 } from "./inputs.js";
+export type { TextAreaProps, RadioGroupProps, RadioOption } from "./inputs.js";
 
 export { Form } from "./Form.js";
 export type { FormProps } from "./Form.js";
@@ -31,3 +34,6 @@ export type { ButtonGroupProps, ButtonConfig } from "./ButtonGroup.js";
 
 export { Container, Navbar, Modal } from "./layout.js";
 export type { ContainerProps, NavbarProps, ModalProps, NavItem } from "./layout.js";
+
+export { LogPanel } from "./LogPanel.js";
+export type { LogPanelProps, LogLine } from "./LogPanel.js";

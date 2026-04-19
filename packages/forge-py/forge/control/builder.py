@@ -11,6 +11,7 @@ from forge.config import EndpointRepoConfig, ProjectConfig
 from forge.control.decorator import (
     ActionEndpointDefinition,
     ComputedColumnEndpointDefinition,
+    StreamingEndpointDefinition,
     ParamSchema,
     get_endpoint_registry,
 )
@@ -71,9 +72,10 @@ class EndpointBuilder:
 
     def _build_descriptor(
         self,
-        defn: ActionEndpointDefinition | ComputedColumnEndpointDefinition,
+        defn: ActionEndpointDefinition | ComputedColumnEndpointDefinition | StreamingEndpointDefinition,
         repo_name: str,
     ) -> dict[str, Any]:
+        is_streaming = isinstance(defn, StreamingEndpointDefinition)
         base = {
             "id": defn.id,
             "name": defn.name,
@@ -81,7 +83,7 @@ class EndpointBuilder:
             "description": defn.description,
             "repo": repo_name,
             "params": [self._serialize_param(p) for p in defn.params],
-            "path": f"/endpoints/{defn.id}",
+            "path": f"/endpoints/{defn.id}" + ("/stream" if is_streaming else ""),
         }
         if isinstance(defn, ComputedColumnEndpointDefinition):
             base["object_type"] = defn.object_type

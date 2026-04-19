@@ -1,0 +1,11 @@
+
+> student-manager-app@0.1.0 dev
+> vite
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+Re-optimizing dependencies because lockfile has changed
+
+  VITE v5.4.21  ready in 178 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose

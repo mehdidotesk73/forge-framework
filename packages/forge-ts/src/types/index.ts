@@ -56,7 +56,8 @@ export interface InteractionConfig<T = unknown> {
   selectable?: "none" | "single" | "multi";
   onClick?: ForgeAction;
   onDoubleClick?: ForgeAction;
-  contextMenu?: ContextMenuItem[];
+  onSelectionChange?: (rows: T[]) => void;
+  contextMenu?: ContextMenuItem[] | ((row: T) => ContextMenuItem[]);
   tooltip?: string | ((item: T) => string);
   colorScheme?: string;
   visibleFields?: string[];
@@ -98,7 +99,7 @@ export interface ParamDescriptor {
 export interface EndpointDescriptor {
   id: string;
   name: string;
-  kind: "action" | "computed_column";
+  kind: "action" | "computed_column" | "streaming";
   description: string;
   repo: string;
   params: ParamDescriptor[];

@@ -79,7 +79,7 @@ class InputHandle:
 
     def _get_conn(self) -> duckdb.DuckDBPyConnection:
         if self._conn is None:
-            self._conn = self._engine.get_connection()
+            self._conn = duckdb.connect()  # in-memory; parquet reads don't need the catalog lock
         return self._conn
 
     def relation(self) -> duckdb.DuckDBPyRelation:
@@ -104,26 +104,45 @@ class StorageEngine:
         self.data_dir = forge_dir / "data"
         self.db_path = forge_dir / "forge.duckdb"
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self._conn: duckdb.DuckDBPyConnection | None = None
         self._lock = threading.Lock()
         self._ensure_schema()
 
     def get_connection(self) -> duckdb.DuckDBPyConnection:
-        if self._conn is None:
-            self._conn = duckdb.connect(str(self.db_path))
-        return self._conn
+        """Open a fresh catalog connection. Caller is responsible for closing it."""
+        return duckdb.connect(str(self.db_path))
+
+    def close(self) -> None:
+        self._conn = None
+
+    def __enter__(self) -> "StorageEngine":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
 
     def _execute(self, sql: str, params: list | None = None) -> None:
         with self._lock:
-            self.get_connection().execute(sql, params or [])
+            conn = duckdb.connect(str(self.db_path))
+            try:
+                conn.execute(sql, params or [])
+            finally:
+                conn.close()
 
     def _fetchone(self, sql: str, params: list | None = None) -> tuple | None:
         with self._lock:
-            return self.get_connection().execute(sql, params or []).fetchone()
+            conn = duckdb.connect(str(self.db_path))
+            try:
+                return conn.execute(sql, params or []).fetchone()
+            finally:
+                conn.close()
 
     def _fetchall(self, sql: str, params: list | None = None) -> list[tuple]:
         with self._lock:
-            return self.get_connection().execute(sql, params or []).fetchall()
+            conn = duckdb.connect(str(self.db_path))
+            try:
+                return conn.execute(sql, params or []).fetchall()
+            finally:
+                conn.close()
 
     def _ensure_schema(self) -> None:
         self._execute("""
@@ -304,8 +323,9 @@ class StorageEngine:
         meta = self.get_dataset(dataset_id)
         if meta is None:
             raise ValueError(f"Dataset {dataset_id} not found")
-        with self._lock:
-            return self.get_connection().read_parquet(str(self.data_dir / meta.parquet_path))
+        # Use an in-memory DuckDB — parquet reads don't need the catalog lock
+        conn = duckdb.connect()
+        return conn.read_parquet(str(self.data_dir / meta.parquet_path))
 
     # ── Run history ──────────────────────────────────────────────────────────
 

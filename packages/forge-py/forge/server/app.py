@@ -12,13 +12,14 @@ from typing import Any
 import fastapi
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from forge.config import ProjectConfig
 from forge.control.decorator import (
     ActionEndpointDefinition,
     ComputedColumnEndpointDefinition,
+    StreamingEndpointDefinition,
     get_endpoint_registry,
 )
 from forge.pipeline.runner import PipelineRunner
@@ -114,7 +115,7 @@ def create_app(
                 uow = init_context(engine)
                 result = defn.func(**body)
                 uow.flush()  # atomic write on success; skipped on exception
-                return {"result": result}
+                return result
 
             elif isinstance(defn, ComputedColumnEndpointDefinition):
                 # Computed column calls are read-only — init context for model
@@ -138,6 +139,33 @@ def create_app(
             raise
         except Exception as exc:
             raise HTTPException(500, str(exc)) from exc
+
+    @app.post("/endpoints/{endpoint_id}/stream")
+    async def call_streaming_endpoint(endpoint_id: str, request: Request) -> StreamingResponse:
+        registry = get_endpoint_registry()
+        defn = registry.get(endpoint_id)
+        if defn is None or not isinstance(defn, StreamingEndpointDefinition):
+            raise HTTPException(404, f"Streaming endpoint {endpoint_id} not found")
+
+        body = await request.json()
+
+        from forge.control.context import init_context
+        init_context(engine)
+
+        async def event_stream():
+            try:
+                for event in defn.func(**body):
+                    yield f"event: {event.event}\ndata: {event.data}\n\n"
+            except Exception as exc:
+                yield f"event: error\ndata: {exc}\n\n"
+            finally:
+                yield "event: done\ndata: \n\n"
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     # ── Schema artifacts ──────────────────────────────────────────────────────
 

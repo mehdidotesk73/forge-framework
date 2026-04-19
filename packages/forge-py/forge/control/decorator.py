@@ -3,9 +3,15 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
-_ENDPOINT_REGISTRY: dict[str, "ActionEndpointDefinition | ComputedColumnEndpointDefinition"] = {}
+_ENDPOINT_REGISTRY: dict[str, "ActionEndpointDefinition | ComputedColumnEndpointDefinition | StreamingEndpointDefinition"] = {}
+
+
+@dataclass
+class StreamEvent:
+    data: str
+    event: str = "message"  # stdout | stderr | status | done | error
 
 
 @dataclass
@@ -47,6 +53,49 @@ class ComputedColumnEndpointDefinition:
     @property
     def kind(self) -> str:
         return "computed_column"
+
+
+@dataclass
+class StreamingEndpointDefinition:
+    id: str
+    name: str
+    func: Callable[..., Generator[StreamEvent, None, None]]
+    params: list[ParamSchema]
+    description: str = ""
+    module: str = ""
+    repo: str = ""
+
+    @property
+    def kind(self) -> str:
+        return "streaming"
+
+
+def streaming_endpoint(
+    name: str | None = None,
+    params: list[dict[str, Any]] | None = None,
+    description: str = "",
+    endpoint_id: str | None = None,
+) -> Callable:
+    """Decorator: registers a generator function as a streaming (SSE) endpoint."""
+
+    def decorator(func: Callable) -> Callable:
+        ep_name = name or func.__name__
+        ep_id = endpoint_id or str(uuid.uuid4())
+        parsed_params = _parse_params(params or [])
+
+        defn = StreamingEndpointDefinition(
+            id=ep_id,
+            name=ep_name,
+            func=func,
+            params=parsed_params,
+            description=description or (func.__doc__ or "").strip(),
+            module=func.__module__,
+        )
+        _ENDPOINT_REGISTRY[ep_id] = defn
+        func._forge_endpoint = defn  # type: ignore[attr-defined]
+        return func
+
+    return decorator
 
 
 def action_endpoint(

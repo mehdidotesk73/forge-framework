@@ -66,3 +66,48 @@ export async function triggerPipeline(name: string): Promise<unknown> {
   if (!res.ok) throw new Error(`Failed to trigger pipeline ${name}`);
   return res.json();
 }
+
+export interface StreamHandlers {
+  onEvent?: (event: string, data: string) => void;
+  onDone?: () => void;
+  onError?: (err: Error) => void;
+}
+
+export async function callStreamingEndpoint(
+  endpointId: string,
+  body: Record<string, unknown>,
+  handlers: StreamHandlers
+): Promise<void> {
+  const res = await fetch(`${_baseUrl}/endpoints/${endpointId}/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) {
+    handlers.onError?.(new Error(`Streaming endpoint ${endpointId} failed (${res.status})`));
+    return;
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const blocks = buf.split("\n\n");
+    buf = blocks.pop() ?? "";
+    for (const block of blocks) {
+      if (!block.trim()) continue;
+      let eventType = "message";
+      let data = "";
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event: ")) eventType = line.slice(7).trim();
+        else if (line.startsWith("data: ")) data = line.slice(6);
+      }
+      if (eventType === "done") { handlers.onDone?.(); return; }
+      if (eventType === "error") { handlers.onError?.(new Error(data)); return; }
+      handlers.onEvent?.(eventType, data);
+    }
+  }
+  handlers.onDone?.();
+}

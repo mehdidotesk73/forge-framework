@@ -49,6 +49,7 @@ class AppConfig(BaseModel):
 class ProjectConfig(BaseModel):
     name: str
     forge_version: str = "0.1.0"
+    api_port: int | None = None
     datasets: list[DatasetConfig] = Field(default_factory=list)
     pipelines: list[PipelineConfig] = Field(default_factory=list)
     models: list[ModelConfig] = Field(default_factory=list)
@@ -89,6 +90,7 @@ def load_config(project_root: Path | None = None) -> tuple[ProjectConfig, Path]:
     config = ProjectConfig(
         name=project_section.get("name", root.name),
         forge_version=project_section.get("forge_version", "0.1.0"),
+        api_port=project_section.get("api_port"),
         datasets=[DatasetConfig(**d) for d in raw.get("datasets", [])],
         pipelines=[PipelineConfig(**p) for p in raw.get("pipelines", [])],
         models=[ModelConfig(**m) for m in raw.get("models", [])],
