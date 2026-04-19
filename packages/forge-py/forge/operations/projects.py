@@ -160,7 +160,7 @@ def write_ide_config(root: Path, suite_root: Path | None = None) -> None:
 _FORGE_TOML_TEMPLATE = """\
 [project]
 name = "{name}"
-forge_version = "0.1.0"
+forge_version = "{forge_version}"
 """
 
 _GITIGNORE = """\
@@ -192,7 +192,7 @@ def create_project(root: Path, suite_root: Path | None = None) -> None:
     ]
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
-    (root / "forge.toml").write_text(_FORGE_TOML_TEMPLATE.format(name=root.name))
+    (root / "forge.toml").write_text(_FORGE_TOML_TEMPLATE.format(name=root.name, forge_version=__version__))
     (root / ".gitignore").write_text(_GITIGNORE)
     (root / "pipelines" / "__init__.py").write_text("")
     (root / "models" / "__init__.py").write_text("")

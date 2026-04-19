@@ -11,7 +11,7 @@ console = Console()
 _FORGE_TOML = """\
 [project]
 name = "{name}"
-forge_version = "0.1.0"
+forge_version = "{forge_version}"
 
 # Datasets are managed automatically by forge dataset load
 # datasets = []
@@ -102,7 +102,7 @@ def init_cmd(project_name: str, path: str) -> None:
         d.mkdir(parents=True, exist_ok=True)
 
     # Write forge.toml
-    (project_dir / "forge.toml").write_text(_FORGE_TOML.format(name=project_name))
+    (project_dir / "forge.toml").write_text(_FORGE_TOML.format(name=project_name, forge_version=__version__))
 
     # Write .gitignore
     (project_dir / ".gitignore").write_text(_GITIGNORE)
