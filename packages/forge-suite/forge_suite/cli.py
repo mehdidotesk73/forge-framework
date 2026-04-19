@@ -81,6 +81,54 @@ def _bootstrap_webapp() -> None:
     finally:
         os.chdir(_prev_cwd)
     console.print("  [dim]forge-suite ready.[/dim]\n")
+    _print_quickstart()
+
+
+def _print_quickstart() -> None:
+    """Print the Forge Suite quick-reference cheat sheet."""
+    console.print()
+    console.rule("[bold cyan]Forge Suite — Quick Reference[/bold cyan]")
+    console.print("""
+[bold]Management UI[/bold]
+  forge-suite serve                        Start UI at http://localhost:5174
+  forge-suite serve --port 8080            Custom port
+  forge-suite serve --no-open              Don't open browser automatically
+
+[bold]Project management[/bold]
+  forge-suite init <path>                  Scaffold + register a new project
+  forge-suite mount <path>                 Register an existing project
+  forge-suite list                         List all registered projects
+  forge-suite sync <path>                  Re-sync project from forge.toml
+
+[bold]Project operations[/bold] [dim](no server required)[/dim]
+  forge-suite pipeline-run <path> <name>   Run a named pipeline
+  forge-suite model-build <path>           Rebuild model schemas + SDKs
+  forge-suite endpoint-build <path>        Rebuild endpoint descriptor registry
+  forge-suite project-serve <path>         Start project backend only (:8001)
+
+[bold]Maintenance[/bold]
+  forge-suite quickstart                   Show this reference
+  forge-suite uninstall                    Remove forge-suite + forge-framework
+""")
+    console.rule("[bold]forge CLI[/bold] [dim](run inside a project directory)[/dim]")
+    console.print("""
+  forge init <name>                        Scaffold a new Forge project
+  forge dev serve                          Start dev server (:8000)
+  forge pipeline run <name>                Run a pipeline
+  forge pipeline dag                       Show pipeline dependency graph
+  forge pipeline history <name>            Show run history for a pipeline
+  forge model build                        Build model schemas + SDKs
+  forge model reinitialize <Type>          Reset a model's backing dataset
+  forge endpoint build                     Build endpoint descriptor registry
+  forge dataset load <file> --name <n>     Load a dataset from a file
+  forge dataset list                       List all datasets
+  forge dataset inspect <id>               Inspect a dataset
+  forge build                              Build frontend apps (npm run build)
+  forge export                             Export project as .forgepkg
+  forge upgrade [--dry-run]                Run migrations + rebuild artifacts
+  forge version                            Show framework version
+""")
+    console.rule()
 
 
 @click.group()
@@ -316,6 +364,33 @@ def project_serve(project_path: str, port: int, app: str | None) -> None:
         subprocess.run(cmd, cwd=root)
     except KeyboardInterrupt:
         console.print("\n[dim]Stopped.[/dim]")
+
+
+@cli.command("quickstart")
+def quickstart() -> None:
+    """Print all forge-suite and forge CLI commands."""
+    _print_quickstart()
+
+
+@cli.command("help")
+def help_cmd() -> None:
+    """Alias for quickstart — print all forge-suite and forge CLI commands."""
+    _print_quickstart()
+
+
+@cli.command("uninstall")
+def uninstall_self() -> None:
+    """Remove forge-suite and forge-framework from this Python environment."""
+    console.print("[yellow]Uninstalling forge-suite and forge-framework…[/yellow]")
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "uninstall", "forge-suite", "forge-framework", "-y"]
+    )
+    if result.returncode == 0:
+        console.print("[green]✓[/green] Uninstalled successfully.")
+    else:
+        console.print("[red]✗[/red] pip exited with an error (see above).")
+        sys.exit(result.returncode)
 
 
 if __name__ == "__main__":
