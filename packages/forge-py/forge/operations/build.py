@@ -87,8 +87,10 @@ def stream_model_build(root: Path):
                     mode = artifact.get("mode", "—")
                     snap_id = artifact.get("snapshot_dataset_id") or "—"
                     back_id = artifact.get("backing_dataset_id", "—")
+                    back_name = artifact.get("backing_dataset_name", "")
+                    backing_display = f"{back_name} ({back_id[:8]}…)" if back_name else f"{back_id[:8]}…"
 
-                    yield ("stdout", f"  mode={mode}  pk={pk}  backing={back_id[:8]}…  snapshot={snap_id[:8] if snap_id != '—' else '—'}…")
+                    yield ("stdout", f"  mode={mode}  pk={pk}  backing={backing_display}  snapshot={snap_id[:8] if snap_id != '—' else '—'}…")
 
                     col_w = max((len(n) for n in fields), default=5)
                     sep_w = col_w + 40

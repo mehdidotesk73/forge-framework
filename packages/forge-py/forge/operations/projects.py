@@ -247,12 +247,14 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
             field_count = str(len(schema.get("fields", {})))
             built_at = schema.get("built_at", "")
             backing_dataset_id = schema.get("backing_dataset_id", "")
+            backing_dataset_name = schema.get("backing_dataset_name", "")
             snapshot_dataset_id = schema.get("snapshot_dataset_id", "")
         models.append({
             "name": obj_name,
             "mode": m.get("mode", "snapshot"),
             "module": m.get("module", ""),
             "backing_dataset_id": backing_dataset_id,
+            "backing_dataset_name": backing_dataset_name,
             "snapshot_dataset_id": snapshot_dataset_id,
             "field_count": field_count,
             "built_at": built_at,

@@ -57,6 +57,7 @@ type ObjectTypeRow = {
   mode: string;
   module: string;
   backing_dataset_id: string;
+  backing_dataset_name: string;
   field_count: string;
   built_at: string;
 };
@@ -75,7 +76,7 @@ const MODEL_SCHEMA: ForgeSchema = {
     name: { type: "string", display: "Name" },
     mode: { type: "string", display: "Mode" },
     field_count: { type: "string", display: "Fields" },
-    backing_dataset_id: { type: "string", display: "Dataset ID" },
+    backing_dataset_id: { type: "string", display: "Dataset" },
     built_at: { type: "datetime", display: "Built At" },
   },
 };
@@ -531,7 +532,7 @@ export function ModelPage() {
                       : []),
                   ],
                 }}
-                renderCell={(field, value) => {
+                renderCell={(field, value, row) => {
                   if (field === "name")
                     return (
                       <span style={{ fontWeight: 600 }}>
@@ -552,12 +553,16 @@ export function ModelPage() {
                     return <span className='mono'>{String(value || "—")}</span>;
                   if (field === "backing_dataset_id") {
                     const v = String(value ?? "");
+                    const dname = (row as ObjectTypeRow).backing_dataset_name;
+                    const label = dname
+                      ? `${dname} (${v.slice(0, 8)}…)`
+                      : v ? v.slice(0, 8) + "…" : "—";
                     return (
                       <span
                         className='mono'
                         style={{ color: "var(--text-muted)", fontSize: 11 }}
                       >
-                        {v ? v.slice(0, 8) + "…" : "—"}
+                        {label}
                       </span>
                     );
                   }

@@ -52,6 +52,7 @@ def sync_project_records(project_id: str, root: Path, cfg: dict) -> None:
             mode=m["mode"],
             module=m["module"],
             backing_dataset_id=m["backing_dataset_id"],
+            backing_dataset_name=m.get("backing_dataset_name", ""),
             field_count=m["field_count"],
             built_at=m["built_at"],
         )

@@ -78,11 +78,15 @@ class ModelBuilder:
                         "display_hint": f.display_hint,
                     })
 
+        backing_meta = self.engine.get_dataset(defn.backing_dataset_id)
+        backing_dataset_name = backing_meta.name if backing_meta else ""
+
         from datetime import datetime, timezone
         artifact = {
             "name": defn.class_name,
             "mode": defn.mode,
             "backing_dataset_id": defn.backing_dataset_id,
+            "backing_dataset_name": backing_dataset_name,
             "snapshot_dataset_id": snapshot_dataset_id,
             "fields": schema_fields,
             "primary_key": next(

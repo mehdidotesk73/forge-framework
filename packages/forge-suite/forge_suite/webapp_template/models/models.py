@@ -62,6 +62,7 @@ class ObjectType(ForgeSnapshotModel):
     mode: str = field_def(display="Mode")             # snapshot | stream
     module: str = field_def(display="Module")
     backing_dataset_id: str = field_def(display="Dataset ID")
+    backing_dataset_name: str = field_def(display="Dataset")
     field_count: str = field_def(display="Fields")
     built_at: str = field_def(display="Built At", display_hint="datetime")
 

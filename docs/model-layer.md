@@ -40,7 +40,7 @@ For stream models, all reads go directly to the backing dataset.
 # models/student.py
 from forge.model import forge_model, field_def, related
 
-@forge_model(mode="snapshot", backing_dataset="students")
+@forge_model(mode="snapshot", backing_dataset="a1b2c3d4-0000-0000-0000-000000000001")
 class Student:
     id:          str  = field_def(primary_key=True)
     name:        str  = field_def(display="Full Name")
@@ -51,7 +51,7 @@ class Student:
     grade_keys:  str  = field_def(display="Grade IDs")
 ```
 
-The `backing_dataset` value must match the `name` field of a dataset entry in `forge.toml` (not the UUID — Forge looks it up by name).
+The `backing_dataset` value is the **UUID** of the dataset — the same UUID assigned by `forge dataset load` and declared in the pipeline's `@pipeline` decorator. Copy it from `forge dataset list` or from your `forge.toml` pipeline output declaration.
 
 ### 2. Register in forge.toml
 
@@ -127,7 +127,7 @@ Relations express one-to-many links stored as JSON key lists in a string field:
 ```python
 from forge.model import forge_model, field_def, related
 
-@forge_model(mode="snapshot", backing_dataset="students")
+@forge_model(mode="snapshot", backing_dataset="a1b2c3d4-0000-0000-0000-000000000001")
 class Student:
     id:         str = field_def(primary_key=True)
     name:       str
@@ -245,7 +245,7 @@ You do not need to call flush or commit explicitly. The `@action_endpoint` runti
 Stream models are read-only views of pipeline output:
 
 ```python
-@forge_model(mode="stream", backing_dataset="stock_prices")
+@forge_model(mode="stream", backing_dataset="a1b2c3d4-0000-0000-0000-000000000099")
 class StockPrice:
     symbol: str  = field_def(primary_key=True)
     ts:     str
@@ -366,7 +366,7 @@ Model classes may be imported by the Control layer. The Control layer may not be
 # models/grade.py
 from forge.model import forge_model, field_def
 
-@forge_model(mode="snapshot", backing_dataset="grades")
+@forge_model(mode="snapshot", backing_dataset="a1b2c3d4-0000-0000-0000-000000000002")
 class Grade:
     id:         str   = field_def(primary_key=True)
     student_id: str   = field_def(display="Student ID")
