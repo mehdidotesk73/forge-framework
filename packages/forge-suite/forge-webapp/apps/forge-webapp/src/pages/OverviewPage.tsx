@@ -13,10 +13,11 @@ import type { ContextMenuItem } from "@forge-suite/ts";
 import type { ForgeSchema } from "@forge-suite/ts";
 import { LayerLineage } from "../components/LayerLineage.js";
 
-const SYNC_ID = "cccccccc-0004-0000-0000-000000000000";
-const HEALTH_ID = "cccccccc-0010-0000-0000-000000000000";
-const LINEAGE_ID = "cccccccc-0009-0000-0000-000000000000";
-const UNREGISTER_ID = "cccccccc-0002-0000-0000-000000000000";
+const SYNC_ID         = "cccccccc-0004-0000-0000-000000000000";
+const HEALTH_ID       = "cccccccc-0010-0000-0000-000000000000";
+const LINEAGE_ID      = "cccccccc-0009-0000-0000-000000000000";
+const UNREGISTER_ID   = "cccccccc-0002-0000-0000-000000000000";
+const OPEN_IN_VSCODE_ID = "cccccccc-0017-0000-0000-000000000000";
 
 type ProjectRow = {
   id: string;
@@ -48,7 +49,7 @@ const PROJECT_SCHEMA: ForgeSchema = {
   fields: {
     name: { type: "string", display: "Name" },
     root_path: { type: "string", display: "Path" },
-    forge_version: { type: "string", display: "Version" },
+    forge_version: { type: "string", display: "Framework" },
     is_active: { type: "string", display: "Active" },
   },
 };
@@ -218,6 +219,16 @@ export function OverviewPage() {
             interaction={{
               visibleFields: ["name", "root_path", "forge_version", "is_active"],
               contextMenu: (row): ContextMenuItem[] => [
+                {
+                  label: "↗ Open in VS Code",
+                  action: {
+                    kind: "ui",
+                    handler: () => callEndpoint(OPEN_IN_VSCODE_ID, {
+                      folder_path: String(row.root_path),
+                      file_path: `${String(row.root_path)}/forge.toml`,
+                    }),
+                  },
+                },
                 {
                   label: "Offload project",
                   action: { kind: "ui", handler: () => handleUnregister(row.id as string) },
