@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchObjectSet,
@@ -6,14 +6,12 @@ import {
   ObjectTable,
   MetricTile,
   Container,
-  ButtonGroup,
   createObjectSet,
 } from "@forge-suite/ts";
 import type { ContextMenuItem } from "@forge-suite/ts";
 import type { ForgeSchema } from "@forge-suite/ts";
 import { LayerLineage } from "../components/LayerLineage.js";
 
-const SYNC_ID         = "cccccccc-0004-0000-0000-000000000000";
 const HEALTH_ID       = "cccccccc-0010-0000-0000-000000000000";
 const LINEAGE_ID      = "cccccccc-0009-0000-0000-000000000000";
 const UNREGISTER_ID   = "cccccccc-0002-0000-0000-000000000000";
@@ -86,30 +84,6 @@ export function OverviewPage() {
     refetchInterval: 10000,
   });
 
-  const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  const handleSync = async () => {
-    if (!active) return;
-    setSyncing(true);
-    setSyncMsg(null);
-    try {
-      const res = await callEndpoint<{ synced?: string; error?: string }>(SYNC_ID, { project_id: active.id });
-      if (res.error) {
-        setSyncMsg({ ok: false, text: `Sync failed: ${res.error}` });
-      } else {
-        setSyncMsg({ ok: true, text: "Project synced." });
-        refetchProjects();
-        refetchHealth();
-      }
-    } catch (e: unknown) {
-      setSyncMsg({ ok: false, text: `Sync error: ${e instanceof Error ? e.message : String(e)}` });
-    } finally {
-      setSyncing(false);
-      setTimeout(() => setSyncMsg(null), 4000);
-    }
-  };
-
   const handleUnregister = async (id: string) => {
     if (!confirm("Remove this project?")) return;
     await callEndpoint(UNREGISTER_ID, { project_id: id });
@@ -127,26 +101,6 @@ export function OverviewPage() {
     <div className='page'>
       <div className='page-header'>
         <h1 className='page-title'>Overview</h1>
-        {active && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {syncMsg && (
-              <span style={{ fontSize: 12, color: syncMsg.ok ? "var(--accent)" : "var(--accent-red)" }}>
-                {syncMsg.text}
-              </span>
-            )}
-            <ButtonGroup
-              size='sm'
-              buttons={[
-                {
-                  label: syncing ? "Syncing…" : "↻ Sync project",
-                  variant: "secondary",
-                  disabled: syncing,
-                  action: { kind: "ui", handler: handleSync },
-                },
-              ]}
-            />
-          </div>
-        )}
       </div>
 
       {!active ? (

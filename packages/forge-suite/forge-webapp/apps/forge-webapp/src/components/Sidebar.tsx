@@ -14,6 +14,7 @@ import type { Page } from "../App.js";
 const GET_DOCS_ID = "cccccccc-0019-0000-0000-000000000000";
 const REGISTER_ID = "cccccccc-0001-0000-0000-000000000000";
 const SET_ACTIVE_ID = "cccccccc-0003-0000-0000-000000000000";
+const SYNC_ID = "cccccccc-0004-0000-0000-000000000000";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: "◈" },
@@ -42,6 +43,7 @@ export function Sidebar({ activePage, onNavigate }: Props) {
   const [copied, setCopied] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [docsTab, setDocsTab] = useState(0);
+  const [syncing, setSyncing] = useState(false);
 
   function generateUuid(): string {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -78,6 +80,17 @@ export function Sidebar({ activePage, onNavigate }: Props) {
       callEndpoint(SET_ACTIVE_ID, { project_id }),
     onSuccess: () => qc.invalidateQueries(),
   });
+
+  const handleSync = async () => {
+    if (!active || syncing) return;
+    setSyncing(true);
+    try {
+      await callEndpoint(SYNC_ID, { project_id: active.id });
+      qc.invalidateQueries();
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const { data: docsData } = useQuery({
     queryKey: ["forge_docs"],
@@ -231,28 +244,46 @@ export function Sidebar({ activePage, onNavigate }: Props) {
           <>
             {/* Active project label */}
             {active && (
-              <Container direction='column' gap={2} padding='10px 16px'>
-                <span
-                  style={{
-                    color: "var(--accent-green)",
-                    fontWeight: 600,
-                    fontSize: 11,
-                  }}
-                >
-                  ● Active
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {active.name}
-                </span>
-              </Container>
+              <Container
+                direction='row'
+                startChildren={
+                  <Container direction='column' gap={6} padding='10px 16px'>
+                    <span
+                      style={{
+                        color: "var(--accent-green)",
+                        fontWeight: 600,
+                        fontSize: 11,
+                      }}
+                    >
+                      ● Active
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {active.name}
+                    </span>
+                  </Container>
+                }
+                endChildren={
+                  <ButtonGroup
+                    size='sm'
+                    buttons={[
+                      {
+                        label: syncing ? "Syncing…" : "↻ Sync",
+                        variant: "ghost",
+                        disabled: syncing,
+                        action: { kind: "ui", handler: handleSync },
+                      },
+                    ]}
+                  />
+                }
+              ></Container>
             )}
 
             {/* Utility buttons */}

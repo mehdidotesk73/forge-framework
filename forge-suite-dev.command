@@ -31,6 +31,10 @@ cd "$WEBAPP_APP"
 npm run dev &
 VITE_PID=$!
 
+# Give Vite a moment to start, then open the browser
+sleep 3
+open "http://localhost:5174" 2>/dev/null || true
+
 echo ""
 echo "Forge Suite dev mode running:"
 echo "  API:     http://localhost:7999/api/health"
