@@ -454,34 +454,41 @@ if [ "$FROM_PHASE" -le 7 ]; then
 
   cd "$REPO_ROOT"
 
-  log_step "Staging version and build-artifact files..."
-  run_cmd "git add \
-    packages/forge-py/forge/version.py \
-    packages/forge-py/pyproject.toml \
-    packages/forge-ts/package.json \
-    packages/forge-suite/pyproject.toml \
-    packages/forge-suite/forge_suite/cli.py"
-
-  # Stage any package-lock.json files updated by npm install/build steps
-  while IFS= read -r lockfile; do
-    run_cmd "git add '$lockfile'"
-  done < <(git diff --name-only | grep 'package-lock\.json' || true)
-
-  # Stage any other tracked files that changed (e.g. dev/ scripts)
-  STAGED=$(git diff --cached --name-only)
-  log_info "  Staged files:"
-  echo "$STAGED" | while read -r f; do log_info "    $f"; done
-
-  # Also check for other unstaged tracked changes
-  UNSTAGED=$(git diff --name-only)
-  if [[ -n "$UNSTAGED" ]]; then
-    log_warn "Other unstaged changes not included in this commit:"
-    echo "$UNSTAGED" | while read -r f; do log_warn "    $f"; done
-  fi
-
   if $DRY_RUN; then
-    log_warn "[dry-run] Skipping: git commit, git tag, git push"
+    log_warn "[dry-run] Skipping git add/commit/tag/push — would stage:"
+    for f in \
+        packages/forge-py/forge/version.py \
+        packages/forge-py/pyproject.toml \
+        packages/forge-ts/package.json \
+        packages/forge-suite/pyproject.toml; do
+      log_info "    $f"
+    done
+    while IFS= read -r lockfile; do
+      log_info "    $lockfile"
+    done < <(git diff --name-only | grep 'package-lock\.json' || true)
   else
+    log_step "Staging version and build-artifact files..."
+    run_cmd "git add \
+      packages/forge-py/forge/version.py \
+      packages/forge-py/pyproject.toml \
+      packages/forge-ts/package.json \
+      packages/forge-suite/pyproject.toml \
+      packages/forge-suite/forge_suite/cli.py"
+
+    # Stage any package-lock.json files updated by npm install/build steps
+    while IFS= read -r lockfile; do
+      run_cmd "git add '$lockfile'"
+    done < <(git diff --name-only | grep 'package-lock\.json' || true)
+
+    STAGED=$(git diff --cached --name-only)
+    log_info "  Staged files:"
+    echo "$STAGED" | while read -r f; do log_info "    $f"; done
+
+    UNSTAGED=$(git diff --name-only)
+    if [[ -n "$UNSTAGED" ]]; then
+      log_warn "Other unstaged changes not included in this commit:"
+      echo "$UNSTAGED" | while read -r f; do log_warn "    $f"; done
+    fi
     log_step "Creating release commit..."
     run_cmd "git commit -m 'chore: release v$NEW_VERSION'"
     log_ok "Committed"
@@ -503,14 +510,19 @@ fi
 # Dry-run cleanup — revert version bumps so the tree is clean afterward
 # ═══════════════════════════════════════════════════════════════════════════════
 if $DRY_RUN; then
-  echo -e "\n${C}  Reverting version file changes (dry-run cleanup)…${X}"
-  git checkout -- \
+  echo -e "\n${C}  Reverting dry-run changes (restoring working tree to HEAD)…${X}"
+  # git checkout HEAD -- unstages AND restores the working tree from HEAD
+  git checkout HEAD -- \
     packages/forge-py/forge/version.py \
     packages/forge-py/pyproject.toml \
     packages/forge-ts/package.json \
     packages/forge-suite/pyproject.toml
+  # revert package-lock.json if npm modified it
+  while IFS= read -r lockfile; do
+    git checkout HEAD -- "$lockfile"
+  done < <(git diff --name-only | grep 'package-lock\.json' || true)
   rm -f "$STATE_FILE"
-  echo -e "${G}     ✓  Version files restored to v$PY_VER — working tree clean${X}"
+  echo -e "${G}     ✓  Working tree restored to v$PY_VER — clean${X}"
   echo -e "${G}     ✓  To publish for real, run:  ${BOLD}bash dev/release.sh $BUMP${X}"
 fi
 
