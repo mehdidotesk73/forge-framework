@@ -9,6 +9,13 @@
 #   bash dev/release.sh patch --dry-run            # full build, no publish/push
 #   bash dev/release.sh patch --from-phase 4       # resume after a failure
 #
+# Dry-run workflow:
+#   --dry-run bumps version files and builds everything (so the build is real),
+#   but skips npm publish, PyPI upload, git commit/tag/push.
+#   After a dry-run the working tree is dirty. To do the real release:
+#     bash dev/release.sh --from-phase 3
+#   Do NOT re-run "bash dev/release.sh patch" after a dry-run — it will double-bump.
+#
 # Phases:
 #   1  Pre-flight checks (git state, credentials, version sync)
 #   2  Bump all four version files
@@ -164,7 +171,24 @@ if [ "$FROM_PHASE" -le 1 ]; then
   DIRTY=$(git status --porcelain 2>/dev/null | grep -v '^??' || true)
   if [[ -n "$DIRTY" ]]; then
     echo "$DIRTY"
-    die "Working tree has uncommitted changes. Commit or stash them first."
+    # If a previous dry-run left state behind, guide the user to --from-phase
+    if [[ -f "$STATE_FILE" ]]; then
+      source "$STATE_FILE" 2>/dev/null || true
+      echo -e "\n${Y}  A previous dry-run already bumped version files to v${NEW_VERSION:-?}."
+      echo -e "  To publish that version without re-bumping, run:${X}"
+      echo -e "    ${BOLD}bash dev/release.sh --from-phase 3${X}"
+      echo -e "${Y}  To start fresh with a new bump, commit the changes above first (do NOT tag):${X}"
+      echo -e "    ${BOLD}git add -u${X}"
+      echo -e "    ${BOLD}git commit -m 'chore: pre-release cleanup'${X}"
+      echo -e "  Then re-run:  ${BOLD}bash dev/release.sh $BUMP${DRY_RUN:+ --dry-run}${X}\n"
+    else
+      echo -e "\n${Y}  These look like source edits that haven't been committed yet."
+      echo -e "  Commit them first (do NOT tag — the script creates the tag in Phase 7):${X}"
+      echo -e "    ${BOLD}git add -u${X}"
+      echo -e "    ${BOLD}git commit -m 'chore: pre-release cleanup'${X}"
+      echo -e "  Then re-run:  ${BOLD}bash dev/release.sh $BUMP${DRY_RUN:+ --dry-run}${X}\n"
+    fi
+    die "Working tree has uncommitted changes."
   fi
   log_ok "Git working tree is clean"
 
@@ -431,13 +455,18 @@ if [ "$FROM_PHASE" -le 7 ]; then
 
   cd "$REPO_ROOT"
 
-  log_step "Staging version files..."
+  log_step "Staging version and build-artifact files..."
   run_cmd "git add \
     packages/forge-py/forge/version.py \
     packages/forge-py/pyproject.toml \
     packages/forge-ts/package.json \
     packages/forge-suite/pyproject.toml \
     packages/forge-suite/forge_suite/cli.py"
+
+  # Stage any package-lock.json files updated by npm install/build steps
+  while IFS= read -r lockfile; do
+    run_cmd "git add '$lockfile'"
+  done < <(git diff --name-only | grep 'package-lock\.json' || true)
 
   # Stage any other tracked files that changed (e.g. dev/ scripts)
   STAGED=$(git diff --cached --name-only)
