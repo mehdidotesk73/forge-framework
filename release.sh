@@ -34,15 +34,17 @@ fi
 
 # ── Read current versions ──────────────────────────────────────────────────────
 PY_VER=$(python3 -c "import re; print(re.search(r'\"(.+?)\"', open('packages/forge-py/forge/version.py').read()).group(1))")
+PY_TOML_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('packages/forge-py/pyproject.toml').read(), re.M).group(1))")
 TS_VER=$(python3 -c "import json; print(json.load(open('packages/forge-ts/package.json'))['version'])")
 SUITE_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
 
 echo "Current versions:"
-echo "  forge-py:    $PY_VER"
-echo "  forge-ts:    $TS_VER"
-echo "  forge-suite: $SUITE_VER"
+echo "  forge-py (version.py):    $PY_VER"
+echo "  forge-py (pyproject.toml): $PY_TOML_VER"
+echo "  forge-ts:                 $TS_VER"
+echo "  forge-suite:              $SUITE_VER"
 
-if [[ "$PY_VER" != "$TS_VER" || "$PY_VER" != "$SUITE_VER" ]]; then
+if [[ "$PY_VER" != "$TS_VER" || "$PY_VER" != "$SUITE_VER" || "$PY_VER" != "$PY_TOML_VER" ]]; then
   echo "ERROR: version mismatch — all three packages must be on the same version before releasing."
   exit 1
 fi
@@ -96,6 +98,12 @@ data = json.load(open(path))
 data["version"] = v
 open(path, "w").write(json.dumps(data, indent=2) + "\n")
 
+# forge-py/pyproject.toml
+path = "packages/forge-py/pyproject.toml"
+text = open(path).read()
+text = re.sub(r'^version = "[^"]+"', f'version = "{v}"', text, flags=re.M)
+open(path, "w").write(text)
+
 # forge-suite/pyproject.toml
 path = "packages/forge-suite/pyproject.toml"
 text = open(path).read()
@@ -125,6 +133,8 @@ else
 fi
 
 # ── forge-webapp — pre-build frontend into forge_suite/webapp_dist/ ──────────
+echo "-- Installing forge-webapp dependencies (picks up freshly-published @forge-suite/ts)..."
+(cd packages/forge-suite/forge-webapp/apps/forge-webapp && npm install)
 echo "-- Building forge-webapp frontend..."
 (cd packages/forge-suite/forge-webapp/apps/forge-webapp && npm run build)
 rm -rf packages/forge-suite/forge_suite/webapp_dist
