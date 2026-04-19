@@ -60,19 +60,26 @@ def _bootstrap_webapp() -> None:
         if k.endswith("_DATASET_ID") and isinstance(v, str)
     ]
     for uid in dataset_ids:
-        try:
-            engine.get_dataset(uid)
-        except Exception:
+        if engine.get_dataset(uid) is None:
             engine.write_dataset(uid, pd.DataFrame())
 
-    subprocess.run(
-        [sys.executable, "-m", "forge.cli.main", "model", "build"],
-        cwd=str(_WEBAPP_DIR), check=True,
-    )
-    subprocess.run(
-        [sys.executable, "-m", "forge.cli.main", "endpoint", "build"],
-        cwd=str(_WEBAPP_DIR), check=True,
-    )
+    # Call builders directly (avoids python -m issues on Windows caused by
+    # forge/cli/__init__.py pre-importing forge.cli.main before runpy executes it)
+    import os
+    _prev_cwd = os.getcwd()
+    try:
+        os.chdir(str(_WEBAPP_DIR))
+        from forge.config import find_project_root, load_config
+        from forge.model.builder import ModelBuilder
+        from forge.control.builder import EndpointBuilder
+        _root = find_project_root()
+        _config, _ = load_config(_root)
+        if _config.models:
+            ModelBuilder(_config, _root, engine).build_all()
+        if _config.endpoint_repos:
+            EndpointBuilder(_config, _root).build_all()
+    finally:
+        os.chdir(_prev_cwd)
     console.print("  [dim]forge-suite ready.[/dim]\n")
 
 

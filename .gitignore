@@ -10,8 +10,16 @@ dist/
 .pytest_cache/
 .mypy_cache/
 
+# Generated at release time — not source
+packages/forge-py/forge/docs/
+forge_suite/webapp_dist/
+
 # Backup files
 *.bak
+
+# Release tooling — generated artifacts, not source
+dev/logs/
+dev/.release-state
 
 # Claude / AI local config
 .claude/
