@@ -199,15 +199,21 @@ if [ "$FROM_PHASE" -le 1 ]; then
     log_ok "On branch: $BRANCH"
   fi
 
-  # 1c. npm credentials
+  # 1c. npm credentials — check token exists then verify it against the registry
   log_step "Checking npm credentials..."
   NPM_TOKEN=$(grep -s '//registry.npmjs.org/:_authToken=' "$HOME/.npmrc" | head -1 || true)
   if [[ -z "$NPM_TOKEN" ]]; then
     die "npm auth token not found in ~/.npmrc. Add: //registry.npmjs.org/:_authToken=npm_xxx"
   fi
   log_ok "npm auth token found in ~/.npmrc"
+  log_step "Verifying npm token against registry (npm whoami)..."
+  NPM_USER=$(npm whoami 2>&1 || true)
+  if [[ "$NPM_USER" == *"Invalid"* || "$NPM_USER" == *"401"* || "$NPM_USER" == *"403"* || "$NPM_USER" == *"ENEEDAUTH"* || -z "$NPM_USER" ]]; then
+    die "npm token is invalid or expired (npm whoami returned: $NPM_USER). Regenerate at https://www.npmjs.com/settings/~/tokens"
+  fi
+  log_ok "npm authenticated as: $NPM_USER"
 
-  # 1d. PyPI credentials
+  # 1d. PyPI credentials — check config then verify token against upload endpoint
   log_step "Checking PyPI credentials..."
   if [[ ! -f "$HOME/.pypirc" ]]; then
     die "~/.pypirc not found. Create it with [pypi] credentials (see: https://pypi.org/manage/account/token/)"
@@ -216,6 +222,41 @@ if [ "$FROM_PHASE" -le 1 ]; then
     die "~/.pypirc exists but has no [pypi] section."
   fi
   log_ok "~/.pypirc found with [pypi] section"
+  log_step "Verifying PyPI token against upload endpoint..."
+  PYPI_CHECK=$("$PYTHON" - <<'PYEOF'
+import configparser, urllib.request, urllib.error, base64, sys, os
+cfg = configparser.ConfigParser()
+cfg.read(os.path.expanduser("~/.pypirc"))
+try:
+    username = cfg.get("pypi", "username", fallback="__token__")
+    password = cfg.get("pypi", "password")
+except configparser.NoOptionError:
+    print("NOPASSWORD")
+    sys.exit(0)
+creds = base64.b64encode(f"{username}:{password}".encode()).decode()
+req = urllib.request.Request("https://upload.pypi.org/legacy/", method="POST", data=b"")
+req.add_header("Authorization", f"Basic {creds}")
+try:
+    urllib.request.urlopen(req, timeout=10)
+    print("OK")
+except urllib.error.HTTPError as e:
+    # 400 = auth passed but request has no content (expected)
+    # 403 = auth failed
+    print("OK" if e.code == 400 else f"FAILED:{e.code}")
+except Exception as e:
+    print(f"ERROR:{e}")
+PYEOF
+)
+  case "$PYPI_CHECK" in
+    OK)
+      log_ok "PyPI token verified" ;;
+    NOPASSWORD)
+      die "~/.pypirc [pypi] section has no 'password' key. Add your API token as: password = pypi-xxx" ;;
+    FAILED:403)
+      die "PyPI token is invalid or expired (HTTP 403). Regenerate at https://pypi.org/manage/account/token/" ;;
+    *)
+      die "PyPI token check failed: $PYPI_CHECK" ;;
+  esac
 
   # 1e. Python build + twine
   log_step "Checking Python build tools..."
