@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Forge Suite — one-time setup.
+# Forge Suite — one-time setup. Re-run after any frontend source changes.
 # Double-click on macOS, or run: bash setup.command
 set -euo pipefail
 
@@ -41,6 +41,18 @@ fi
 echo "→ Setting up forge-webapp..."
 cd "$WEBAPP_DIR"
 bash setup.sh
+
+# ── Build frontend and copy into package ─────────────────────────────────────
+
+echo "→ Building forge-webapp frontend..."
+cd "$REPO_ROOT"
+npm run build --workspace=packages/forge-suite/forge-webapp/apps/forge-webapp --silent
+
+DIST_SRC="$REPO_ROOT/packages/forge-suite/forge-webapp/apps/forge-webapp/dist"
+DIST_DST="$REPO_ROOT/packages/forge-suite/forge_suite/webapp_dist"
+echo "→ Copying dist → forge_suite/webapp_dist..."
+rm -rf "$DIST_DST"
+cp -r "$DIST_SRC" "$DIST_DST"
 
 # ── Make launch script executable ────────────────────────────────────────────
 
