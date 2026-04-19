@@ -8,7 +8,7 @@ A Forge project defines its own pipelines, models, endpoints, and UI; Forge supp
 
 **Packages:**
 - `forge-framework` (Python, pip) — CLI (`forge`), runtime, storage, code generation
-- `@forge-framework/ts` (TypeScript, npm) — React widget library
+- `@forge-suite/ts` (TypeScript, npm) — React widget library
 
 ---
 

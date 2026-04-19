@@ -4,7 +4,7 @@
 
 The View layer renders data and captures user interactions using React. It imports the generated TypeScript SDK and endpoint IDs — nothing else from the backend. It never writes `fetch` calls, never constructs HTTP requests, and never imports Python model classes.
 
-The view layer is a standard React app. Forge supplies a widget library (`@forge-framework/ts`) and a runtime client that handles all HTTP communication with the Forge server.
+The view layer is a standard React app. Forge supplies a widget library (`@forge-suite/ts`) and a runtime client that handles all HTTP communication with the Forge server.
 
 ---
 
@@ -13,8 +13,8 @@ The view layer is a standard React app. Forge supplies a widget library (`@forge
 ### Install the widget library
 
 ```bash
-npm install @forge-framework/ts
-# or, in a monorepo workspace, the package is already available as @forge-framework/ts
+npm install @forge-suite/ts
+# or, in a monorepo workspace, the package is already available as @forge-suite/ts
 ```
 
 ### Configure the base URL
@@ -24,7 +24,7 @@ In a browser, the client defaults to `window.location.origin`. When the app is s
 Only call `configureForge` if you need to override the target (e.g., pointing directly at a remote backend):
 
 ```typescript
-import { configureForge } from "@forge-framework/ts";
+import { configureForge } from "@forge-suite/ts";
 
 configureForge({ baseUrl: "https://my-server.example.com" });
 ```
@@ -68,7 +68,7 @@ const page2 = await loadStudentSet({ limit: 50, offset: 50 });
 The primary widget for displaying a list of objects.
 
 ```tsx
-import { ObjectTable } from "@forge-framework/ts";
+import { ObjectTable } from "@forge-suite/ts";
 
 <ObjectTable
   objectSet={studentSet}
@@ -132,7 +132,7 @@ Right-click any row to open the context menu. Escape or click outside to close.
 For detail views or card-grid layouts:
 
 ```tsx
-import { ObjectCard } from "@forge-framework/ts";
+import { ObjectCard } from "@forge-suite/ts";
 
 <ObjectCard
   object={student}
@@ -149,7 +149,7 @@ import { ObjectCard } from "@forge-framework/ts";
 Aggregate a numeric field from an object set:
 
 ```tsx
-import { MetricTile } from "@forge-framework/ts";
+import { MetricTile } from "@forge-suite/ts";
 
 <MetricTile
   label="Total Students"
@@ -168,7 +168,7 @@ import { MetricTile } from "@forge-framework/ts";
 Line, bar, or area chart from an object set:
 
 ```tsx
-import { Chart } from "@forge-framework/ts";
+import { Chart } from "@forge-suite/ts";
 
 <Chart
   objectSet={priceSet}
@@ -189,7 +189,7 @@ The x-axis uses `xField`; each `series` entry maps to one line/bar/area.
 Client-side text filtering over an object set:
 
 ```tsx
-import { FilterBar, applyFilterState } from "@forge-framework/ts";
+import { FilterBar, applyFilterState } from "@forge-suite/ts";
 
 const [filters, setFilters] = useState({});
 const visible = applyFilterState(studentSet.rows, filters);
@@ -211,7 +211,7 @@ const visible = applyFilterState(studentSet.rows, filters);
 ### callEndpoint
 
 ```typescript
-import { callEndpoint } from "@forge-framework/ts";
+import { callEndpoint } from "@forge-suite/ts";
 
 const result = await callEndpoint<Student>(
   "11111111-0000-0000-0000-000000000001",   // endpoint UUID — never the name
@@ -226,7 +226,7 @@ Returns `Promise<T>` where T is the endpoint's return type. Throws on non-2xx re
 The `Form` widget fetches the endpoint descriptor and renders an appropriate input for each param automatically. No manual form building required.
 
 ```tsx
-import { Form } from "@forge-framework/ts";
+import { Form } from "@forge-suite/ts";
 
 <Form
   endpointId="11111111-0000-0000-0000-000000000001"
@@ -255,7 +255,7 @@ import { Form } from "@forge-framework/ts";
 Use these when you need custom form UIs beyond what `<Form>` auto-renders:
 
 ```tsx
-import { TextInput, NumberInput, Toggle, Selector, MultiSelector, DateInput } from "@forge-framework/ts";
+import { TextInput, NumberInput, Toggle, Selector, MultiSelector, DateInput } from "@forge-suite/ts";
 
 <TextInput
   value={name}
@@ -309,7 +309,7 @@ import { TextInput, NumberInput, Toggle, Selector, MultiSelector, DateInput } fr
 ## File Upload
 
 ```tsx
-import { FileUpload } from "@forge-framework/ts";
+import { FileUpload } from "@forge-suite/ts";
 
 <FileUpload
   label="Upload Roster"
@@ -328,7 +328,7 @@ Accepts `.csv`, `.parquet`, `.json`. POSTs to `/api/datasets/upload`. Returns `{
 ### Container
 
 ```tsx
-import { Container } from "@forge-framework/ts";
+import { Container } from "@forge-suite/ts";
 
 // Flex row
 <Container layout="flex" direction="row" gap={16} padding={24}>
@@ -347,7 +347,7 @@ import { Container } from "@forge-framework/ts";
 ### Navbar
 
 ```tsx
-import { Navbar } from "@forge-framework/ts";
+import { Navbar } from "@forge-suite/ts";
 
 <Navbar
   title="Student Manager"
@@ -363,7 +363,7 @@ import { Navbar } from "@forge-framework/ts";
 ### Modal
 
 ```tsx
-import { Modal } from "@forge-framework/ts";
+import { Modal } from "@forge-suite/ts";
 
 <Modal
   open={showCreate}
@@ -383,7 +383,7 @@ Portalled to `document.body`. Escape key and overlay click close the modal.
 ### ButtonGroup
 
 ```tsx
-import { ButtonGroup } from "@forge-framework/ts";
+import { ButtonGroup } from "@forge-suite/ts";
 
 <ButtonGroup
   buttons={[
@@ -411,7 +411,7 @@ import { ButtonGroup } from "@forge-framework/ts";
 ## Triggering Pipelines
 
 ```typescript
-import { triggerPipeline } from "@forge-framework/ts";
+import { triggerPipeline } from "@forge-suite/ts";
 
 await triggerPipeline("normalize_students");
 ```
@@ -504,7 +504,7 @@ The View layer must **never**:
 ## Key TypeScript Types
 
 ```typescript
-// From @forge-framework/ts
+// From @forge-suite/ts
 
 interface ForgeObjectSet<T> {
   rows: T[];

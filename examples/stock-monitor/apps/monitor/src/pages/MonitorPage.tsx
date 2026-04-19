@@ -20,7 +20,7 @@ import {
   bindState,
   type ForgeObjectSet,
   fetchObjectSet,
-} from "@forge-framework/ts";
+} from "@forge-suite/ts";
 
 // Endpoint UUID from the control layer (price_endpoints repo)
 const MOVING_AVG_ID = "e9947f90-da94-4f5e-8602-e79c13c62868";

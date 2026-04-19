@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchObjectSet, callEndpoint, ButtonGroup, TextInput, Container } from "@forge-framework/ts";
+import { fetchObjectSet, callEndpoint, ButtonGroup, TextInput, Container } from "@forge-suite/ts";
 
 const CREATE_APP_ID    = "cccccccc-0020-0000-0000-000000000000";
 const RUN_APP_ID       = "cccccccc-0021-0000-0000-000000000000";

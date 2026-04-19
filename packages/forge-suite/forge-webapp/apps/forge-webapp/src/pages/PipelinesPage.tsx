@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchObjectSet, callEndpoint, callStreamingEndpoint, ObjectTable, ButtonGroup, TextInput, createObjectSet } from "@forge-framework/ts";
-import type { ContextMenuItem } from "@forge-framework/ts";
-import type { ForgeSchema } from "@forge-framework/ts";
+import { fetchObjectSet, callEndpoint, callStreamingEndpoint, ObjectTable, ButtonGroup, TextInput, createObjectSet } from "@forge-suite/ts";
+import type { ContextMenuItem } from "@forge-suite/ts";
+import type { ForgeSchema } from "@forge-suite/ts";
 import { LogPanel, type LogLine } from "../components/LogPanel.js";
 import { DAGVisualization } from "../components/DAGVisualization.js";
 

@@ -13,9 +13,9 @@ import {
   Modal,
   LogPanel,
   createObjectSet,
-} from "@forge-framework/ts";
-import type { ContextMenuItem, LogLine } from "@forge-framework/ts";
-import type { ForgeSchema } from "@forge-framework/ts";
+} from "@forge-suite/ts";
+import type { ContextMenuItem, LogLine } from "@forge-suite/ts";
+import type { ForgeSchema } from "@forge-suite/ts";
 
 function columnarToRecords(
   columns: string[],

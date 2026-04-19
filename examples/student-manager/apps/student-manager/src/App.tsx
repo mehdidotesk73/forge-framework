@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navbar } from "@forge-framework/ts";
+import { Navbar } from "@forge-suite/ts";
 import { StudentsPage } from "./pages/StudentsPage.js";
 import { AnalyticsPage } from "./pages/AnalyticsPage.js";
 

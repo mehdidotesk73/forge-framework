@@ -8,9 +8,9 @@ import {
   Container,
   ButtonGroup,
   createObjectSet,
-} from "@forge-framework/ts";
-import type { ContextMenuItem } from "@forge-framework/ts";
-import type { ForgeSchema } from "@forge-framework/ts";
+} from "@forge-suite/ts";
+import type { ContextMenuItem } from "@forge-suite/ts";
+import type { ForgeSchema } from "@forge-suite/ts";
 import { LayerLineage } from "../components/LayerLineage.js";
 
 const SYNC_ID = "cccccccc-0004-0000-0000-000000000000";

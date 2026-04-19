@@ -20,7 +20,7 @@ This section tracks the two-track plan for (a) publishing forge packages to PyPI
 
 - [x] `[HIGH]` **5. Add forge-webapp build step to release.sh** — before building the forge-suite wheel, `release.sh` must run `npm run build` inside `forge-webapp/apps/forge-webapp/` and copy `dist/` to `forge_suite/webapp_dist/`.
 
-- [x] `[MED]` **6. Verify forge-ts forge.css lands in dist/** — confirm that `npm run build` in `packages/forge-ts` produces `dist/forge.css` (or a copy) so consumers that `import "@forge-framework/ts/forge.css"` after a real npm install get the file. Update `package.json` exports and build config if needed.
+- [x] `[MED]` **6. Verify forge-ts forge.css lands in dist/** — confirm that `npm run build` in `packages/forge-ts` produces `dist/forge.css` (or a copy) so consumers that `import "@forge-suite/ts/forge.css"` after a real npm install get the file. Update `package.json` exports and build config if needed.
 
 ### Track 2 — Forge project build & distribution
 

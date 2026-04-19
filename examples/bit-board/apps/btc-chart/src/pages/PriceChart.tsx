@@ -7,7 +7,7 @@ import {
   NumberInput,
   ButtonGroup,
   Container,
-} from "@forge-framework/ts";
+} from "@forge-suite/ts";
 import {
   LineChart,
   Line,

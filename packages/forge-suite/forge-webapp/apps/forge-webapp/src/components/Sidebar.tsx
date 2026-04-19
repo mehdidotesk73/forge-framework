@@ -8,7 +8,7 @@ import {
   Modal,
   TextInput,
   ButtonGroup,
-} from "@forge-framework/ts";
+} from "@forge-suite/ts";
 import type { Page } from "../App.js";
 
 const GET_DOCS_ID = "cccccccc-0019-0000-0000-000000000000";

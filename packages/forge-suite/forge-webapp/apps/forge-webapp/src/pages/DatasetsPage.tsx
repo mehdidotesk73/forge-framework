@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchObjectSet, callEndpoint, ObjectTable, ButtonGroup, Container, createObjectSet, Modal } from "@forge-framework/ts";
-import type { ContextMenuItem, ForgeSchema } from "@forge-framework/ts";
+import { fetchObjectSet, callEndpoint, ObjectTable, ButtonGroup, Container, createObjectSet, Modal } from "@forge-suite/ts";
+import type { ContextMenuItem, ForgeSchema } from "@forge-suite/ts";
 
 function columnarToRecords(columns: string[], rows: unknown[][]): Record<string, unknown>[] {
   return rows.map(row => Object.fromEntries(columns.map((col, i) => [col, row[i]])));

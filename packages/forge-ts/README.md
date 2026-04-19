@@ -1,4 +1,4 @@
-# @forge-framework/ts
+# @forge-suite/ts
 
 The Forge TypeScript/React widget library and runtime.
 
@@ -9,12 +9,12 @@ UI developers import from this package. They compose widgets on pages using obje
 ## Install
 
 ```bash
-npm install @forge-framework/ts
+npm install @forge-suite/ts
 ```
 
 ## Widget Reference
 
-All widgets are imported from `@forge-framework/ts`. Runtime utilities are imported from `@forge-framework/ts/runtime`.
+All widgets are imported from `@forge-suite/ts`. Runtime utilities are imported from `@forge-suite/ts/runtime`.
 
 ### Display Widgets
 
@@ -90,7 +90,7 @@ Actions connect widgets to behavior without the UI developer writing fetch logic
 ## Binding local state to computed column parameters
 
 ```tsx
-import { bindState } from "@forge-framework/ts";
+import { bindState } from "@forge-suite/ts";
 
 // When `days` changes, the endpoint is automatically refetched
 <ObjectTable

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Chart, MetricTile, ObjectTable, type ForgeObjectSet , fetchObjectSet } from "@forge-framework/ts";
+import { Chart, MetricTile, ObjectTable, type ForgeObjectSet , fetchObjectSet } from "@forge-suite/ts";
 
 
 type StudentRow = { id: string; name: string; major: string; status: string; enrolled_at: string; };

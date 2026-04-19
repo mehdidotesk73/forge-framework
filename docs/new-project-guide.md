@@ -35,7 +35,7 @@ Each step is explained in detail in the sections below. Dataset UUIDs are the on
 ## Prerequisites
 
 - `forge-framework` installed: `pip install forge-framework` (or `pip install -e packages/forge-py` from the monorepo)
-- `@forge-framework/ts` available via your workspace (or `npm install @forge-framework/ts`)
+- `@forge-suite/ts` available via your workspace (or `npm install @forge-suite/ts`)
 - Node 18+, Python 3.11+
 
 ---
@@ -308,11 +308,11 @@ forge endpoint build
 forge app create my-dashboard --port 5177
 ```
 
-This scaffolds `apps/my-dashboard/` as a Vite+React project pre-wired to `@forge-framework/ts`.
+This scaffolds `apps/my-dashboard/` as a Vite+React project pre-wired to `@forge-suite/ts`.
 
 ```tsx
 // apps/my-dashboard/src/App.tsx
-import { ObjectTable, loadPriceSet } from "@forge-framework/ts";
+import { ObjectTable, loadPriceSet } from "@forge-suite/ts";
 
 const UPDATE_PRICE_ID = "aaaaaaaa-0001-0000-0000-000000000000";
 const CHANGE_PCT_ID   = "aaaaaaaa-0002-0000-0000-000000000000";
@@ -340,7 +340,7 @@ export default function App() {
 ```
 
 **View layer rules:**
-- Import only from `@forge-framework/ts` and your generated TypeScript SDK (`load<Name>Set`).
+- Import only from `@forge-suite/ts` and your generated TypeScript SDK (`load<Name>Set`).
 - Reference endpoints by UUID string constant — never construct URLs by hand.
 - Never import Python model classes or call `fetch()` directly.
 

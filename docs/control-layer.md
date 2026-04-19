@@ -90,7 +90,7 @@ Return any JSON-serializable value. The FastAPI route wraps it in a JSON respons
 ### Calling an Endpoint from TypeScript
 
 ```typescript
-import { callEndpoint } from "@forge-framework/ts";
+import { callEndpoint } from "@forge-suite/ts";
 
 const result = await callEndpoint<Student>(
   "11111111-0000-0000-0000-000000000001",

@@ -87,7 +87,7 @@ def dev_serve(app: str | None, host: str, port: int, reload: bool) -> None:
 
 
 def _ensure_forge_ts_linked(app_dir: Path, project_root: Path) -> None:
-    """Symlink @forge-framework/ts into app node_modules if missing.
+    """Symlink @forge-suite/ts into app node_modules if missing.
 
     Outside the monorepo the package isn't resolvable via walk-up; this
     finds the nearest installed copy and links it so Vite can resolve it.
@@ -116,14 +116,14 @@ def _ensure_forge_ts_linked(app_dir: Path, project_root: Path) -> None:
 
     if forge_ts_src is None:
         console.print(
-            "[yellow]⚠[/yellow] @forge-framework/ts not found — "
+            "[yellow]⚠[/yellow] @forge-suite/ts not found — "
             "run `npm install` in the app directory after publishing to npm."
         )
         return
 
     scope_dir.mkdir(parents=True, exist_ok=True)
     os.symlink(str(forge_ts_src), str(link_target))
-    console.print(f"[dim]Linked @forge-framework/ts → {forge_ts_src}[/dim]")
+    console.print(f"[dim]Linked @forge-suite/ts → {forge_ts_src}[/dim]")
 
 
 def _mount_app_static(api, config, root: Path, app_filter: str | None) -> None:

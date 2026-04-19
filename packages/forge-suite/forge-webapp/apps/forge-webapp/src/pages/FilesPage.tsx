@@ -1,8 +1,8 @@
 import React, { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchObjectSet, callEndpoint, ObjectTable, ButtonGroup, Container, createObjectSet } from "@forge-framework/ts";
-import type { ContextMenuItem } from "@forge-framework/ts";
-import type { ForgeSchema } from "@forge-framework/ts";
+import { fetchObjectSet, callEndpoint, ObjectTable, ButtonGroup, Container, createObjectSet } from "@forge-suite/ts";
+import type { ContextMenuItem } from "@forge-suite/ts";
+import type { ForgeSchema } from "@forge-suite/ts";
 
 const SYNC_FILES_ID  = "cccccccc-0012-0000-0000-000000000000";
 const UPLOAD_FILE_ID = "cccccccc-0013-0000-0000-000000000000";

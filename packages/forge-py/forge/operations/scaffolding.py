@@ -467,8 +467,8 @@ export default defineConfig({{
   plugins: [react()],
   resolve: {{
     alias: {{
-      "@forge-framework/ts/runtime": forgeTsSrc().replace("index.ts", "runtime/index.ts"),
-      "@forge-framework/ts": forgeTsSrc(),
+      "@forge-suite/ts/runtime": forgeTsSrc().replace("index.ts", "runtime/index.ts"),
+      "@forge-suite/ts": forgeTsSrc(),
     }},
   }},
   server: {{
@@ -496,7 +496,7 @@ _APP_TSCONFIG = '''\
     "jsx": "react-jsx",
     "strict": true,
     "paths": {{
-      "@forge-framework/ts": [".forge/ts-alias-placeholder"]
+      "@forge-suite/ts": [".forge/ts-alias-placeholder"]
     }}
   }},
   "include": ["src"]
@@ -541,7 +541,7 @@ export function App() {{
     <div style={{{{ fontFamily: "system-ui, sans-serif", padding: 24 }}}}>
       <h1>{app_name}</h1>
       <p>
-        Your Forge app. Import from <code>@forge-framework/ts</code> to fetch
+        Your Forge app. Import from <code>@forge-suite/ts</code> to fetch
         object sets and call endpoints.
       </p>
     </div>

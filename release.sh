@@ -34,13 +34,13 @@ echo "Releasing v$VERSION"
 echo ""
 
 # ── TypeScript — build then publish to npm ─────────────────────────────────
-echo "-- Building @forge-framework/ts..."
+echo "-- Building @forge-suite/ts..."
 (cd packages/forge-ts && npm run build)
 
 if $DRY_RUN; then
   echo "-- [dry-run] would run: npm publish --access public (in packages/forge-ts)"
 else
-  echo "-- Publishing @forge-framework/ts@$VERSION to npm..."
+  echo "-- Publishing @forge-suite/ts@$VERSION to npm..."
   (cd packages/forge-ts && npm publish --access public)
 fi
 

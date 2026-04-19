@@ -16,23 +16,27 @@ from rich.console import Console
 
 console = Console()
 
-# Paths relative to this package (works for editable installs from the monorepo)
-_PACKAGE_DIR = Path(__file__).resolve().parent.parent          # packages/forge-suite/
-_WEBAPP_DIR = _PACKAGE_DIR / "forge-webapp"
+_PACKAGE_DIR = Path(__file__).resolve().parent                      # forge_suite/
+_TEMPLATE_DIR = _PACKAGE_DIR / "webapp_template"                    # bundled backend template
+_WEBAPP_DIR   = Path.home() / ".forge-suite" / "webapp"             # runtime backend (user-writable)
 
 SERVE_PORT = 5174
 
 
 def _bootstrap_webapp() -> None:
-    """Create backing datasets, patch models.py, and build artifacts on first run."""
+    """Copy template and initialise datasets/artifacts on first run."""
     artifacts_dir = _WEBAPP_DIR / ".forge" / "artifacts"
     if (artifacts_dir / "ForgeProject.schema.json").exists():
         return
 
-    console.print("  [dim]Setting up forge-webapp (first run)…[/dim]")
+    console.print("  [dim]Setting up forge-suite (first run)…[/dim]")
 
-    import uuid
+    import shutil
     import pandas as pd
+
+    # Copy the backend template to the user's home dir if not present
+    if not _WEBAPP_DIR.exists():
+        shutil.copytree(str(_TEMPLATE_DIR), str(_WEBAPP_DIR))
 
     forge_dir = _WEBAPP_DIR / ".forge"
     forge_dir.mkdir(parents=True, exist_ok=True)
@@ -43,30 +47,23 @@ def _bootstrap_webapp() -> None:
     if webapp_str not in sys.path:
         sys.path.insert(0, webapp_str)
 
+    # Import models to discover dataset UUIDs, then initialise empty datasets
     from forge.storage.engine import StorageEngine
     engine = StorageEngine(forge_dir)
 
-    models_path = _WEBAPP_DIR / "models" / "models.py"
-    source = models_path.read_text()
-    placeholders = [
-        "REPLACE_FORGE_PROJECT_UUID",
-        "REPLACE_ARTIFACT_STAMP_UUID",
-        "REPLACE_PIPELINE_UUID",
-        "REPLACE_PIPELINE_RUN_UUID",
-        "REPLACE_OBJECT_TYPE_UUID",
-        "REPLACE_ENDPOINT_REPO_UUID",
-        "REPLACE_ENDPOINT_UUID",
-        "REPLACE_APP_UUID",
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("models.models", _WEBAPP_DIR / "models" / "models.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    dataset_ids = [
+        v for k, v in vars(mod).items()
+        if k.endswith("_DATASET_ID") and isinstance(v, str)
     ]
-    changed = False
-    for ph in placeholders:
-        if ph in source:
-            uid = str(uuid.uuid4())
+    for uid in dataset_ids:
+        try:
+            engine.get_dataset(uid)
+        except Exception:
             engine.write_dataset(uid, pd.DataFrame())
-            source = source.replace(ph, uid)
-            changed = True
-    if changed:
-        models_path.write_text(source)
 
     subprocess.run(
         [sys.executable, "-m", "forge.cli.main", "model", "build"],
@@ -76,7 +73,7 @@ def _bootstrap_webapp() -> None:
         [sys.executable, "-m", "forge.cli.main", "endpoint", "build"],
         cwd=str(_WEBAPP_DIR), check=True,
     )
-    console.print("  [dim]forge-webapp ready.[/dim]\n")
+    console.print("  [dim]forge-suite ready.[/dim]\n")
 
 
 @click.group()
@@ -90,11 +87,6 @@ def cli() -> None:
 @click.option("--port", default=SERVE_PORT, show_default=True, type=int, help="Port to serve on")
 def serve(no_open: bool, port: int) -> None:
     """Start the Forge Suite management UI."""
-
-    if not _WEBAPP_DIR.exists():
-        console.print(f"[red]Error:[/red] webapp directory not found at {_WEBAPP_DIR}")
-        console.print("Make sure forge-suite is installed from the forge-framework repo.")
-        sys.exit(1)
 
     console.print("[bold green]Forge Suite[/bold green] — starting…\n")
 

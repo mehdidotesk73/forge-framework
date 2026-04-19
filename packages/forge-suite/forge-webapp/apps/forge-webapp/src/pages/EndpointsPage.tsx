@@ -10,8 +10,8 @@ import {
   RadioGroup,
   Container,
   LogPanel,
-} from "@forge-framework/ts";
-import type { LogLine } from "@forge-framework/ts";
+} from "@forge-suite/ts";
+import type { LogLine } from "@forge-suite/ts";
 
 const RUN_ENDPOINT_BUILD_ID      = "cccccccc-0007-0000-0000-000000000000";
 const CREATE_ENDPOINT_ID         = "cccccccc-0018-0000-0000-000000000000";

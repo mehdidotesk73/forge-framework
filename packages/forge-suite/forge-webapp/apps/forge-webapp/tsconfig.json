@@ -14,7 +14,7 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@forge-framework/ts": ["../../../../packages/forge-ts/src/index.ts"]
+      "@forge-suite/ts": ["../../../../packages/forge-ts/src/index.ts"]
     }
   },
   "include": ["src"]

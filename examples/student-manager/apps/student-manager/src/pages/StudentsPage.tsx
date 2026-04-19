@@ -11,7 +11,7 @@ import {
   fetchObjectSet,
   callEndpoint,
   type ForgeObjectSet,
-} from "@forge-framework/ts";
+} from "@forge-suite/ts";
 
 const CREATE_STUDENT_ID  = "53d12e07-c589-44cf-98c2-13a7a63c2978";
 const COMPUTE_METRICS_ID = "6b379c5c-4c48-4ad0-b8f4-9fa5a7bbffdd";

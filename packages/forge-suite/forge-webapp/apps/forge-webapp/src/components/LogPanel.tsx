@@ -1,2 +1,2 @@
-export { LogPanel } from "@forge-framework/ts";
-export type { LogLine } from "@forge-framework/ts";
+export { LogPanel } from "@forge-suite/ts";
+export type { LogLine } from "@forge-suite/ts";

@@ -40,4 +40,4 @@ def version() -> None:
     """Show Forge version."""
     from forge.version import __version__, TS_VERSION
     console.print(f"[bold]forge-framework[/bold] {__version__} (Python)")
-    console.print(f"[bold]@forge-framework/ts[/bold] {TS_VERSION} (TypeScript)")
+    console.print(f"[bold]@forge-suite/ts[/bold] {TS_VERSION} (TypeScript)")

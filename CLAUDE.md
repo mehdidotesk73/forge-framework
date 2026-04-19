@@ -10,7 +10,7 @@ A monorepo for the **Forge framework** — an installable layered data applicati
 
 ```
 packages/forge-py/    Python package (pip install forge-framework)  CLI: `forge`
-packages/forge-ts/    TypeScript package (@forge-framework/ts)       React widget library
+packages/forge-ts/    TypeScript package (@forge-suite/ts)       React widget library
 packages/forge-suite/ Python package (pip install forge-suite)      CLI: `forge-suite serve`; starts backend + UI
 examples/student-manager/              Example 1: snapshot objects, multi-app, action + computed endpoints
 examples/stock-monitor/                Example 2: stream objects, scheduled pipeline, chart
@@ -94,7 +94,7 @@ forge version
 | `packages/forge-py/forge/migrations/base.py` | `@register_migration` decorator; `MigrationRunner` |
 | `packages/forge-py/forge/providers/auth.py` | `AuthProvider` Protocol + `NoAuthProvider` no-op; `make_auth_provider()` |
 | `packages/forge-py/forge/providers/database.py` | `DatabaseProvider` Protocol + `LocalDatabaseProvider`; `make_database_provider()` |
-| `packages/forge-py/forge/cli/dev_cmd.py` | `forge dev serve`; `_ensure_forge_ts_linked()` auto-symlinks `@forge-framework/ts` for out-of-monorepo projects |
+| `packages/forge-py/forge/cli/dev_cmd.py` | `forge dev serve`; `_ensure_forge_ts_linked()` auto-symlinks `@forge-suite/ts` for out-of-monorepo projects |
 | `packages/forge-suite/forge_suite/cli.py` | `forge-suite serve`; `_bootstrap_webapp()` auto-runs first-run setup |
 | `packages/forge-ts/src/widgets/ObjectTable.tsx` | Smart table; fetches computed columns; resolves state bindings |
 | `packages/forge-ts/src/widgets/Form.tsx` | Auto-renders from call form descriptor fetched by endpoint UUID |

@@ -1,5 +1,5 @@
 import React from "react";
-import { Navbar } from "@forge-framework/ts";
+import { Navbar } from "@forge-suite/ts";
 import { DashboardPage } from "./pages/DashboardPage.js";
 
 export function App() {

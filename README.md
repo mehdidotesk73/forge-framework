@@ -111,7 +111,7 @@ forge-framework/
 ├── forge-suite-webapp.command       Webapp interface launcher
 ├── packages/
 │   ├── forge-py/                    Python package (pip install forge-framework)  CLI: forge
-│   ├── forge-ts/                    TypeScript package (@forge-framework/ts)
+│   ├── forge-ts/                    TypeScript package (@forge-suite/ts)
 │   └── forge-suite/                 Python package (pip install forge-suite)      CLI: forge-suite
 │       └── forge-webapp/            Management UI — a Forge project itself
 └── examples/

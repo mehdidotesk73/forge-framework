@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 
 _PACKAGE_DIR = Path(__file__).resolve().parent          # forge_suite/
-_WEBAPP_DIR = _PACKAGE_DIR.parent / "forge-webapp"      # packages/forge-suite/forge-webapp/
-_WEBAPP_DIST = _PACKAGE_DIR / "webapp_dist"             # forge_suite/webapp_dist/
+_WEBAPP_DIST = _PACKAGE_DIR / "webapp_dist"             # forge_suite/webapp_dist/ (bundled frontend)
+_WEBAPP_DIR = Path.home() / ".forge-suite" / "webapp"  # runtime backend (user-writable)
 
 _scheduler = None  # module-level so stop_scheduler() can reach it
 

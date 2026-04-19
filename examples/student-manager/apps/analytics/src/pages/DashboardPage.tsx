@@ -14,7 +14,7 @@ import {
   ObjectTable,
   type ForgeObjectSet,
   fetchObjectSet,
-} from "@forge-framework/ts";
+} from "@forge-suite/ts";
 
 type StudentRow = {
   id: string; name: string; major: string; status: string; enrolled_at: string;
