@@ -10,11 +10,10 @@
 #   bash dev/release.sh patch --from-phase 4       # resume after a failure
 #
 # Dry-run workflow:
-#   --dry-run bumps version files and builds everything (so the build is real),
-#   but skips npm publish, PyPI upload, git commit/tag/push.
-#   After a dry-run the working tree is dirty. To do the real release:
-#     bash dev/release.sh --from-phase 3
-#   Do NOT re-run "bash dev/release.sh patch" after a dry-run — it will double-bump.
+#   --dry-run builds everything for real (catches build errors early) but skips
+#   npm publish, PyPI upload, and git commit/tag/push. At the end it reverts the
+#   version file changes so the working tree is left clean. To then publish:
+#     bash dev/release.sh patch        ← same command, no extra flags needed
 #
 # Phases:
 #   1  Pre-flight checks (git state, credentials, version sync)
@@ -501,6 +500,21 @@ if [ "$FROM_PHASE" -le 7 ]; then
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Dry-run cleanup — revert version bumps so the tree is clean afterward
+# ═══════════════════════════════════════════════════════════════════════════════
+if $DRY_RUN; then
+  echo -e "\n${C}  Reverting version file changes (dry-run cleanup)…${X}"
+  git checkout -- \
+    packages/forge-py/forge/version.py \
+    packages/forge-py/pyproject.toml \
+    packages/forge-ts/package.json \
+    packages/forge-suite/pyproject.toml
+  rm -f "$STATE_FILE"
+  echo -e "${G}     ✓  Version files restored to v$PY_VER — working tree clean${X}"
+  echo -e "${G}     ✓  To publish for real, run:  ${BOLD}bash dev/release.sh $BUMP${X}"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Summary
 # ═══════════════════════════════════════════════════════════════════════════════
 echo -e "\n${BOLD}${G}══════════════════════════════════════════════════════════════════════${X}"
@@ -521,5 +535,7 @@ if ! $DRY_RUN; then
 fi
 echo ""
 
-# Clean up state file on success
-rm -f "$STATE_FILE"
+# Clean up state file on successful real release
+if ! $DRY_RUN; then
+  rm -f "$STATE_FILE"
+fi
