@@ -1,6 +1,6 @@
 {
   "name": "@forge-suite/ts",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "Forge widget library and runtime \u2014 TypeScript/React",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
