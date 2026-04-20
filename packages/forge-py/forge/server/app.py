@@ -137,6 +137,9 @@ def create_app(
 
         except HTTPException:
             raise
+        except SystemExit as exc:
+            log.error("SystemExit raised inside endpoint %s: %r", endpoint_id, exc)
+            raise HTTPException(500, f"Endpoint raised SystemExit({exc.code})") from exc
         except Exception as exc:
             raise HTTPException(500, str(exc)) from exc
 

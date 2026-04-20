@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import signal
 import subprocess
 import sys
 import threading
@@ -208,14 +207,6 @@ def serve(no_open: bool, port: int, dev: bool) -> None:
     import uvicorn
 
     api = create_app(serve_static=not dev)
-
-    def _on_signal(sig: int, frame: object) -> None:
-        console.print("\n[dim]Shutting down…[/dim]")
-        stop_scheduler()
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, _on_signal)
-    signal.signal(signal.SIGTERM, _on_signal)
 
     def _sync_all_projects() -> None:
         """Re-sync all registered projects after the server is ready."""
