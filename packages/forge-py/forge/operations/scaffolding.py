@@ -546,14 +546,14 @@ createRoot(document.getElementById("root")!).render(
 _APP_INDEX_CSS = '''\
 /* Project-specific styles — forge.css is imported in main.tsx */
 
-body {{
+body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-}}
+}
 
-#root {{ min-height: 100vh; }}
+#root { min-height: 100vh; }
 '''
 
 _APP_APP_TSX = '''\
@@ -656,15 +656,15 @@ def create_app(
     (app_dir / "src" / "pages").mkdir(exist_ok=True)
     (app_dir / "src" / "components").mkdir(exist_ok=True)
 
-    (app_dir / "package.json").write_text(_APP_PACKAGE_JSON.format(app_name=name))
-    (app_dir / "vite.config.ts").write_text(_APP_VITE_CONFIG.format())
-    (app_dir / "index.html").write_text(_APP_INDEX_HTML.format(app_name=name))
-    (app_dir / "tsconfig.json").write_text(_APP_TSCONFIG)
-    (app_dir / "src" / "main.tsx").write_text(_APP_MAIN_TSX)
-    (app_dir / "src" / "index.css").write_text(_APP_INDEX_CSS)
-    (app_dir / "src" / "App.tsx").write_text(_APP_APP_TSX.format())
-    (app_dir / "src" / "components" / "Sidebar.tsx").write_text(_APP_SIDEBAR_TSX.format(app_name=name))
-    (app_dir / "src" / "pages" / "landing.tsx").write_text(_APP_LANDING_TSX.format(app_name=name))
+    (app_dir / "package.json").write_text(_APP_PACKAGE_JSON.format(app_name=name), encoding="utf-8")
+    (app_dir / "vite.config.ts").write_text(_APP_VITE_CONFIG.format(), encoding="utf-8")
+    (app_dir / "index.html").write_text(_APP_INDEX_HTML.format(app_name=name), encoding="utf-8")
+    (app_dir / "tsconfig.json").write_text(_APP_TSCONFIG, encoding="utf-8")
+    (app_dir / "src" / "main.tsx").write_text(_APP_MAIN_TSX, encoding="utf-8")
+    (app_dir / "src" / "index.css").write_text(_APP_INDEX_CSS, encoding="utf-8")
+    (app_dir / "src" / "App.tsx").write_text(_APP_APP_TSX.format(), encoding="utf-8")
+    (app_dir / "src" / "components" / "Sidebar.tsx").write_text(_APP_SIDEBAR_TSX.format(app_name=name), encoding="utf-8")
+    (app_dir / "src" / "pages" / "landing.tsx").write_text(_APP_LANDING_TSX.format(app_name=name), encoding="utf-8")
 
     if sys.platform != "win32":
         command_file = root / f"{name}.command"
@@ -677,7 +677,7 @@ def create_app(
     if suite_root is not None:
         suite_root_file = app_dir / ".forge" / "suite_root"
         suite_root_file.parent.mkdir(parents=True, exist_ok=True)
-        suite_root_file.write_text(str(suite_root))
+        suite_root_file.write_text(str(suite_root), encoding="utf-8")
 
     _patch_toml_apps(root, name)
 

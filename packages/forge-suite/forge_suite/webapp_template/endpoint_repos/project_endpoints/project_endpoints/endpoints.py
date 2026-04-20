@@ -242,12 +242,16 @@ def create_endpoint(
     ],
 )
 def create_app(project_id: str, app_name: str, port: str = "5177") -> dict:
+    import traceback
     from forge.operations.scaffolding import create_app as _op
     from forge_suite.operations.projects import sync_project as _sync
     root = _get_root(project_id)
     if root is None:
         return {"error": f"Project {project_id} not found"}
-    result = _op(root, app_name, port)
+    try:
+        result = _op(root, app_name, port)
+    except Exception as exc:
+        return {"error": str(exc), "detail": traceback.format_exc()}
     if "error" not in result:
         _sync(project_id)
     return result
