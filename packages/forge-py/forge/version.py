@@ -1,2 +1,2 @@
-__version__ = "0.1.29"
-TS_VERSION = "0.1.29"  # must match package.json in forge-ts
+__version__ = "0.1.30"
+TS_VERSION = "0.1.30"  # must match package.json in forge-ts
