@@ -85,6 +85,26 @@ def _Path_exists(p: str) -> bool:
     return Path(p).exists()
 
 
+def _ensure_suite_root_file(app_dir: Path) -> None:
+    """Write .forge/suite_root into the app dir so vite.config.ts can resolve @forge-suite/ts."""
+    suite_root_file = app_dir / ".forge" / "suite_root"
+    if suite_root_file.exists():
+        return
+    from forge.operations.projects import resolve_suite_root
+    suite_root = resolve_suite_root()
+    if suite_root is None:
+        try:
+            import forge_suite
+            candidate = Path(forge_suite.__file__).resolve().parent.parent.parent.parent.parent
+            if (candidate / "forge-framework" / "packages" / "forge-ts").exists():
+                suite_root = candidate
+        except Exception:
+            pass
+    if suite_root is not None:
+        suite_root_file.parent.mkdir(parents=True, exist_ok=True)
+        suite_root_file.write_text(str(suite_root))
+
+
 def run_app(project_id: str, app_name: str) -> dict:
     import os
     import shutil
@@ -115,6 +135,7 @@ def run_app(project_id: str, app_name: str) -> dict:
         if result.returncode != 0:
             return {"error": f"npm install failed: {result.stderr[:500]}"}
 
+    _ensure_suite_root_file(app_dir)
     api_port = _ensure_api_running(root)
     run_ports = _load_run_ports(root)
 

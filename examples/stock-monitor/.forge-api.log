@@ -1,6 +1,8 @@
 Forge dev server — stock-monitor
-  API:    http://127.0.0.1:61942/api/health
-  Docs:   http://127.0.0.1:61942/docs
+  API:    http://127.0.0.1:58776/api/health
+  Docs:   http://127.0.0.1:58776/docs
+⚠ @forge-suite/ts not found — run `npm install` in the app directory after 
+publishing to npm.
   App : cd ./apps/monitor && npm run dev  (run npm run build to serve here)
 
 Press Ctrl+C to stop

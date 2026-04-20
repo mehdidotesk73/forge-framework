@@ -57,10 +57,9 @@ The `backing_dataset` value is the **UUID** of the dataset — the same UUID ass
 
 ```toml
 [[models]]
-name   = "Student"
-mode   = "snapshot"
-module = "models.student"
-class  = "Student"
+class_name = "Student"
+mode       = "snapshot"
+module     = "models.student"
 ```
 
 ### 3. Build

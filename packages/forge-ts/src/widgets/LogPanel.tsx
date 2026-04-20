@@ -35,7 +35,7 @@ export function LogPanel({ lines, running = false }: LogPanelProps) {
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", width: "100%" }}>
       <button
         onClick={handleCopy}
         title={copied ? "Copied!" : "Copy to clipboard"}
@@ -67,7 +67,10 @@ export function LogPanel({ lines, running = false }: LogPanelProps) {
         lineHeight: 1.6,
         maxHeight: 320,
         overflowY: "auto",
+        overflowX: "hidden",
         minHeight: 80,
+        width: "100%",
+        boxSizing: "border-box",
       }}>
         {lines.length === 0 && !running && (
           <span style={{ color: "var(--text-muted)" }}>No output yet.</span>

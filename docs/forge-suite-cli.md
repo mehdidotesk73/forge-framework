@@ -124,10 +124,10 @@ name = "normalized_data"
 path = ""
 
 [[pipelines]]
-id       = "cccccccc-0000-0000-0000-000000000003"
-name     = "normalize"
-module   = "pipelines.normalize"
-function = "run"
+id           = "cccccccc-0000-0000-0000-000000000003"
+display_name = "normalize"
+module       = "pipelines.normalize"
+function     = "run"
 ```
 
 Run the pipeline:
@@ -162,10 +162,9 @@ Register it in `forge.toml`:
 
 ```toml
 [[models]]
-name   = "Item"
-mode   = "snapshot"
-module = "models.item"
-class  = "Item"
+class_name = "Item"
+mode       = "snapshot"
+module     = "models.item"
 ```
 
 Build models (generates schema artifacts and Python + TypeScript SDKs):
@@ -183,7 +182,7 @@ Output:
 
 ### 5. Write and build endpoints
 
-Create `endpoint_repos/item_endpoints/item_endpoints/endpoints.py`:
+Create `endpoint_repos/item_endpoints/endpoints.py`:
 
 ```python
 from forge.control.decorator import action_endpoint
@@ -204,16 +203,12 @@ Register the endpoint repo in `forge.toml`:
 
 ```toml
 [[endpoint_repos]]
-name = "item_endpoints"
-path = "endpoint_repos/item_endpoints"
+module = "endpoint_repos.item_endpoints"
 ```
 
 Install the repo package then build:
 
 ```bash
-cd ~/my-projects/my-app
-pip install -e endpoint_repos/item_endpoints
-
 forge-suite endpoint-build ~/my-projects/my-app
 ```
 
@@ -304,11 +299,11 @@ If a pipeline has a `schedule` cron string in `forge.toml`, it runs automaticall
 
 ```toml
 [[pipelines]]
-id       = "..."
-name     = "normalize"
-module   = "pipelines.normalize"
-function = "run"
-schedule = "0 6 * * *"     # 6 AM daily
+id           = "..."
+display_name = "normalize"
+module       = "pipelines.normalize"
+function     = "run"
+schedule     = "0 6 * * *"     # 6 AM daily
 ```
 
 To trigger it manually at any time:

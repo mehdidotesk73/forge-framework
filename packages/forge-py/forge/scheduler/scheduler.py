@@ -47,7 +47,7 @@ class ForgeScheduler:
             if len(parts) == 5:
                 minute, hour, dom, month, dow = parts
             else:
-                log.warning("Invalid cron expression for %s: %s", p.name, p.schedule)
+                log.warning("Invalid cron expression for %s: %s", p.display_name, p.schedule)
                 return
 
             trigger = CronTrigger(
@@ -58,27 +58,27 @@ class ForgeScheduler:
                 self._run_pipeline,
                 trigger=trigger,
                 args=[p],
-                id=f"pipeline_{p.name}",
+                id=f"pipeline_{p.display_name}",
                 replace_existing=True,
                 misfire_grace_time=60,
             )
-            log.info("Scheduled pipeline '%s' with cron: %s", p.name, p.schedule)
+            log.info("Scheduled pipeline '%s' with cron: %s", p.display_name, p.schedule)
         except Exception as exc:
-            log.error("Failed to schedule pipeline '%s': %s", p.name, exc)
+            log.error("Failed to schedule pipeline '%s': %s", p.display_name, exc)
 
     def _run_pipeline(self, p: PipelineConfig) -> None:
-        log.info("Scheduler firing pipeline: %s", p.name)
+        log.info("Scheduler firing pipeline: %s", p.display_name)
         try:
             defn = self.runner.load_pipeline(p.module, p.function)
             result = self.runner.run(defn)
-            log.info("Pipeline '%s' completed: %s", p.name, result)
+            log.info("Pipeline '%s' completed: %s", p.display_name, result)
         except Exception as exc:
-            log.error("Pipeline '%s' failed: %s", p.name, exc)
+            log.error("Pipeline '%s' failed: %s", p.display_name, exc)
 
     def trigger_now(self, pipeline_name: str) -> None:
         """Manually fire a scheduled pipeline immediately."""
         for p in self.config.pipelines:
-            if p.name == pipeline_name and p.schedule:
+            if p.display_name == pipeline_name and p.schedule:
                 job = self._scheduler.get_job(f"pipeline_{pipeline_name}")
                 if job:
                     job.modify(next_run_time=__import__("datetime").datetime.now())

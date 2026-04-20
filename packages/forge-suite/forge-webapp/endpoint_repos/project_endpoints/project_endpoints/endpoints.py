@@ -241,13 +241,31 @@ def create_endpoint(
          "description": "Dev server port (default: 5177)"},
     ],
 )
+def _get_suite_root() -> "Path | None":
+    """Derive the forge-suite root directory for symlink / suite_root resolution."""
+    from forge.operations.projects import resolve_suite_root
+    sr = resolve_suite_root()
+    if sr is not None:
+        return sr
+    try:
+        import forge_suite
+        # In the monorepo: forge_suite/__init__.py lives 5 levels below suite_root
+        # packages/forge-suite/forge_suite/__init__.py → suite_root
+        candidate = Path(forge_suite.__file__).resolve().parent.parent.parent.parent.parent
+        if (candidate / "forge-framework" / "packages" / "forge-ts").exists():
+            return candidate
+    except Exception:
+        pass
+    return None
+
+
 def create_app(project_id: str, app_name: str, port: str = "5177") -> dict:
     from forge.operations.scaffolding import create_app as _op
     from forge_suite.operations.projects import sync_project as _sync
     root = _get_root(project_id)
     if root is None:
         return {"error": f"Project {project_id} not found"}
-    result = _op(root, app_name, port)
+    result = _op(root, app_name, port, suite_root=_get_suite_root())
     if "error" not in result:
         _sync(project_id)
     return result

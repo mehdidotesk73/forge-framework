@@ -155,9 +155,9 @@ id = "e5f6a7b8-..."
 name = "prices"
 
 [[pipelines]]
-name = "ingest_prices"
-module = "pipelines.ingest_prices"
-function = "run"
+display_name = "ingest_prices"
+module       = "pipelines.ingest_prices"
+function     = "run"
 ```
 
 Run and inspect:
@@ -172,10 +172,10 @@ forge pipeline history ingest_prices
 
 ```toml
 [[pipelines]]
-name = "price_pipeline"
-module = "pipelines.price_pipeline"
-function = "run"
-schedule = "0 18 * * 1-5"          # weekdays at 6 pm UTC
+display_name = "price_pipeline"
+module       = "pipelines.price_pipeline"
+function     = "run"
+schedule     = "0 18 * * 1-5"          # weekdays at 6 pm UTC
 ```
 
 The scheduler fires automatically when the dev server is running. `forge pipeline run` always works for manual execution.
@@ -206,10 +206,9 @@ Register the model in `forge.toml`:
 
 ```toml
 [[models]]
-name = "Price"
-mode = "snapshot"
-module = "models.price"
-class = "Price"
+class_name = "Price"
+mode       = "snapshot"
+module     = "models.price"
 ```
 
 Build the model to generate all artifacts:
@@ -245,7 +244,7 @@ filtered = PriceSet.filter(symbol="BTC")
 Endpoints expose business logic over HTTP. They live in endpoint repos — Python packages under `endpoint_repos/`.
 
 ```python
-# endpoint_repos/price_endpoints/price_endpoints/endpoints.py
+# endpoint_repos/price_endpoints/endpoints.py
 from forge.control import action_endpoint, computed_attribute_endpoint
 
 UPDATE_PRICE_ID = "aaaaaaaa-0001-0000-0000-000000000000"
@@ -286,8 +285,7 @@ Register the repo in `forge.toml` and build:
 
 ```toml
 [[endpoint_repos]]
-name = "price_endpoints"
-path = "./endpoint_repos/price_endpoints"
+module = "endpoint_repos.price_endpoints"
 ```
 
 ```bash

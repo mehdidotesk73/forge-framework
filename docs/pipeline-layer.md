@@ -72,10 +72,10 @@ The positional argument names (`raw`, `students`) must match the `"name"` keys i
 
 ```toml
 [[pipelines]]
-id       = "bbbbbbbb-0000-0000-0000-000000000001"
-name     = "normalize_students"
-module   = "pipelines.normalize"
-function = "run"
+id           = "bbbbbbbb-0000-0000-0000-000000000001"
+display_name = "normalize_students"
+module       = "pipelines.normalize"
+function     = "run"
 ```
 
 The `id` here is the pipeline's own identity (for run history), not a dataset UUID.
@@ -168,11 +168,11 @@ Add a cron schedule to `forge.toml` and the pipeline runs automatically while `f
 
 ```toml
 [[pipelines]]
-id       = "..."
-name     = "daily_refresh"
-module   = "pipelines.daily_refresh"
-function = "run"
-schedule = "0 6 * * *"   # 6 AM UTC every day
+id           = "..."
+display_name = "daily_refresh"
+module       = "pipelines.daily_refresh"
+function     = "run"
+schedule     = "0 6 * * *"   # 6 AM UTC every day
 ```
 
 Standard cron syntax: `minute hour day-of-month month day-of-week`.

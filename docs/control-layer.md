@@ -214,8 +214,7 @@ endpoints/
 
 ```toml
 [[endpoint_repos]]
-name = "student_endpoints"
-path = "endpoints/student"
+module = "endpoint_repos.student_endpoints"
 ```
 
 `forge endpoint build` recursively imports all `*.py` files under `path`, triggering decorator registration, then writes `endpoints.json`.

@@ -18,7 +18,7 @@ export default defineConfig({
       fileName: (format, name) => `${name}.${format === "es" ? "mjs" : "js"}`,
     },
     rollupOptions: {
-      external: ["react", "react-dom", "react/jsx-runtime"],
+      external: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
       output: {
         globals: { react: "React", "react-dom": "ReactDOM" },
       },

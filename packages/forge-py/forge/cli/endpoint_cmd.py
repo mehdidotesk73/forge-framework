@@ -51,7 +51,11 @@ def endpoint_build(repo: str | None) -> None:
         return
 
     if repo:
-        repo_cfg = next((r for r in config.endpoint_repos if r.name == repo), None)
+        repo_cfg = next(
+            (r for r in config.endpoint_repos
+             if r.module.split(".")[-1] == repo or r.module == repo),
+            None,
+        )
         if repo_cfg is None:
             console.print(f"[red]Endpoint repo '{repo}' not found[/red]")
             raise SystemExit(1)

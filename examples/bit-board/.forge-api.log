@@ -1,8 +1,6 @@
 Forge dev server — bit-board
-  API:    http://127.0.0.1:58919/api/health
-  Docs:   http://127.0.0.1:58919/docs
-Linked @forge-framework/ts → 
-/Users/mehdi/Sandbox/forge-framework/node_modules/@forge-framework/ts
-  App : http://127.0.0.1:58920/
+  API:    http://127.0.0.1:58683/api/health
+  Docs:   http://127.0.0.1:58683/docs
+  App : http://127.0.0.1:58684/
 
 Press Ctrl+C to stop

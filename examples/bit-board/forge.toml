@@ -3,21 +3,18 @@ name = "bit-board"
 forge_version = "0.1.0"
 
 [[pipelines]]
-name = "bitcoin_price_ingestion"
+display_name = "bitcoin_price_ingestion"
 module = "pipelines.bitcoin_price_ingestion"
 function = "run"
 
 [[models]]
-name = "BitcoinPrice"
-class = "BitcoinPrice"
+class_name = "BitcoinPrice"
 module = "models.bitcoin_price"
 mode = "snapshot"
 
 [[endpoint_repos]]
-name = "get_bitcoin_metrics"
-path = "./endpoint_repos/bitcoin_processing"
+module = "endpoint_repos.bitcoin_processing"
 
-[[apps]]                                                                                                                                                                                                      
-  name = "btc-chart"                                        
-  id = "btc-chart"                                                                                                                                                                                              
-  path = "./apps/btc-chart"                                                                                                                                                                                     
+[[apps]]
+name = "btc-chart"
+path = "./apps/btc-chart"

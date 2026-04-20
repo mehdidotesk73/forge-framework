@@ -1,7 +1,14 @@
 Forge dev server — student-manager
-  API:    http://127.0.0.1:61596/api/health
-  Docs:   http://127.0.0.1:61596/docs
-  App : http://127.0.0.1:61597/
+  API:    http://127.0.0.1:61773/api/health
+  Docs:   http://127.0.0.1:61773/docs
+⚠ @forge-suite/ts not found — run `npm install` in the app directory after 
+publishing to npm.
+  App : http://127.0.0.1:61774/
+⚠ @forge-suite/ts not found — run `npm install` in the app directory after 
+publishing to npm.
   App : cd ./apps/analytics && npm run dev  (run npm run build to serve here)
+⚠ @forge-suite/ts not found — run `npm install` in the app directory after 
+publishing to npm.
+  App : cd ./apps/test && npm run dev  (run npm run build to serve here)
 
 Press Ctrl+C to stop

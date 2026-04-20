@@ -3,74 +3,61 @@ name = "forge-webapp"
 forge_version = "0.1.0"
 
 [[models]]
-name = "ForgeProject"
+class_name = "ForgeProject"
 mode = "snapshot"
 module = "models.models"
-class = "ForgeProject"
 
 [[models]]
-name = "ArtifactStamp"
+class_name = "ArtifactStamp"
 mode = "snapshot"
 module = "models.models"
-class = "ArtifactStamp"
 
 [[models]]
-name = "Pipeline"
+class_name = "Pipeline"
 mode = "snapshot"
 module = "models.models"
-class = "Pipeline"
 
 [[models]]
-name = "PipelineRun"
+class_name = "PipelineRun"
 mode = "snapshot"
 module = "models.models"
-class = "PipelineRun"
 
 [[models]]
-name = "ObjectType"
+class_name = "ObjectType"
 mode = "snapshot"
 module = "models.models"
-class = "ObjectType"
 
 [[models]]
-name = "EndpointRepo"
+class_name = "EndpointRepo"
 mode = "snapshot"
 module = "models.models"
-class = "EndpointRepo"
 
 [[models]]
-name = "Endpoint"
+class_name = "Endpoint"
 mode = "snapshot"
 module = "models.models"
-class = "Endpoint"
 
 [[models]]
-name = "App"
+class_name = "App"
 mode = "snapshot"
 module = "models.models"
-class = "App"
 
 [[models]]
-name = "ProjectFile"
+class_name = "ProjectFile"
 mode = "snapshot"
 module = "models.models"
-class = "ProjectFile"
 
 [[endpoint_repos]]
-name = "project_endpoints"
-path = "./endpoint_repos/project_endpoints"
+module = "endpoint_repos.project_endpoints"
 
 [[endpoint_repos]]
-name = "build_endpoints"
-path = "./endpoint_repos/build_endpoints"
+module = "endpoint_repos.build_endpoints"
 
 [[endpoint_repos]]
-name = "computed_endpoints"
-path = "./endpoint_repos/computed_endpoints"
+module = "endpoint_repos.computed_endpoints"
 
 [[endpoint_repos]]
-name = "file_endpoints"
-path = "./endpoint_repos/file_endpoints"
+module = "endpoint_repos.file_endpoints"
 
 [[apps]]
 name = "forge-webapp"

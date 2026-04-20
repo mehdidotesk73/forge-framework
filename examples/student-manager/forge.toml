@@ -10,25 +10,22 @@ forge_version = "0.1.0"
 
 [[pipelines]]
 id = "aaaaaaaa-0000-0000-0000-000000000001"
-name = "student_pipeline"
+display_name = "student_pipeline"
 module = "pipelines.student_pipeline"
 function = "run"
 
 [[models]]
-name = "Student"
+class_name = "Student"
 mode = "snapshot"
 module = "models.student"
-class = "Student"
 
 [[models]]
-name = "Grade"
+class_name = "Grade"
 mode = "snapshot"
 module = "models.grade"
-class = "Grade"
 
 [[endpoint_repos]]
-name = "student_endpoints"
-path = "./endpoint_repos/student_endpoints"
+module = "endpoint_repos.student_endpoints"
 
 [[apps]]
 name = "student-manager"

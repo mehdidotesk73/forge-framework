@@ -67,11 +67,11 @@ def _patch_toml_pipelines(root: Path, name: str) -> None:
     if not toml_path.exists():
         return
     cfg = read_toml(toml_path)
-    if any(p.get("name") == name for p in cfg.get("pipelines", [])):
+    if any(p.get("display_name") == name or p.get("name") == name for p in cfg.get("pipelines", [])):
         return
     toml_path.write_text(
         toml_path.read_text()
-        + f'\n[[pipelines]]\nname = "{name}"\nmodule = "pipelines.{name}"\nfunction = "run"\n'
+        + f'\n[[pipelines]]\ndisplay_name = "{name}"\nmodule = "pipelines.{name}"\nfunction = "run"\n'
     )
 
 
@@ -86,6 +86,7 @@ _TYPE_MAP = {
 }
 
 _MODEL_TEMPLATE = '''\
+# -*- coding: utf-8 -*-
 """
 Model Layer — {class_name} ({mode})
 Backed by dataset {dataset_id}.
@@ -135,7 +136,8 @@ def create_model(root: Path, dataset_id: str, model_name: str, mode: str = "snap
         return {"error": "Dataset has no schema fields — run the pipeline at least once first"}
 
     col_names = list(schema_fields.keys())
-    pk_candidates = [c for c in col_names if c.lower() == "id"]
+    pk_candidates = [c for c in col_names if c.lower() == "id"] \
+        or [c for c in col_names if c.lower() == "pk"]
     primary_key = pk_candidates[0] if pk_candidates else col_names[0]
 
     field_lines = []
@@ -168,11 +170,11 @@ def _patch_toml_models(root: Path, class_name: str, snake_name: str, mode: str) 
     if not toml_path.exists():
         return
     cfg = read_toml(toml_path)
-    if any(m.get("name") == class_name for m in cfg.get("models", [])):
+    if any(m.get("class_name") == class_name or m.get("name") == class_name for m in cfg.get("models", [])):
         return
     toml_path.write_text(
         toml_path.read_text()
-        + f'\n[[models]]\nname = "{class_name}"\nclass = "{class_name}"\n'
+        + f'\n[[models]]\nclass_name = "{class_name}"\n'
           f'module = "models.{snake_name}"\nmode = "{mode}"\n'
     )
 
@@ -328,18 +330,23 @@ def create_endpoint(
     toml_path = root / "forge.toml"
     cfg = read_toml(toml_path) if toml_path.exists() else {}
 
+    repo_module = f"endpoint_repos.{repo}"
     existing_repo = next(
-        (r for r in cfg.get("endpoint_repos", []) if r.get("name") == repo), None
+        (r for r in cfg.get("endpoint_repos", [])
+         if r.get("module") == repo_module or r.get("name") == repo),
+        None,
     )
     repo_root = root / "endpoint_repos" / repo
-    pkg_dir = repo_root / repo
-    endpoints_file = pkg_dir / "endpoints.py"
+    # New repos use flat structure: endpoint_repos/{repo}/endpoints.py
+    # Old repos may have nested structure: endpoint_repos/{repo}/{repo}/endpoints.py
+    old_endpoints_file = repo_root / repo / "endpoints.py"
+    new_endpoints_file = repo_root / "endpoints.py"
+    endpoints_file = old_endpoints_file if old_endpoints_file.exists() else new_endpoints_file
 
     if existing_repo is None:
-        pkg_dir.mkdir(parents=True, exist_ok=True)
-        (pkg_dir / "__init__.py").write_text("")
-        (repo_root / "setup.py").write_text(_ENDPOINT_REPO_SETUP.format(repo_name=repo))
-        endpoints_file.write_text(
+        repo_root.mkdir(parents=True, exist_ok=True)
+        (repo_root / "__init__.py").write_text("")
+        new_endpoints_file.write_text(
             _ENDPOINT_FILE_NEW[kind].format(
                 repo_name=repo,
                 CONST_NAME=const_name,
@@ -350,12 +357,11 @@ def create_endpoint(
         if toml_path.exists():
             toml_path.write_text(
                 toml_path.read_text()
-                + f'\n[[endpoint_repos]]\nname = "{repo}"\npath = "./endpoint_repos/{repo}"\n'
+                + f'\n[[endpoint_repos]]\nmodule = "{repo_module}"\n'
             )
     else:
-        pkg_dir.mkdir(parents=True, exist_ok=True)
-        if not (pkg_dir / "__init__.py").exists():
-            (pkg_dir / "__init__.py").write_text("")
+        if not endpoints_file.parent.exists():
+            endpoints_file.parent.mkdir(parents=True, exist_ok=True)
         existing = endpoints_file.read_text() if endpoints_file.exists() else ""
         if f"def {name}(" in existing:
             return {"error": f"Function '{name}' already exists in {repo}/endpoints.py"}
@@ -420,6 +426,7 @@ _APP_PACKAGE_JSON = '''\
     "preview": "vite preview"
   }},
   "dependencies": {{
+    "@forge-suite/ts": "*",
     "@tanstack/react-query": "^5.40.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -469,6 +476,7 @@ export default defineConfig({{
   plugins: [react()],
   resolve: {{
     alias: {{
+      "@forge-suite/ts/forge.css": forgeTsSrc().replace("index.ts", "forge.css"),
       "@forge-suite/ts/runtime": forgeTsSrc().replace("index.ts", "runtime/index.ts"),
       "@forge-suite/ts": forgeTsSrc(),
     }},
@@ -483,8 +491,8 @@ export default defineConfig({{
 '''
 
 _APP_TSCONFIG = '''\
-{{
-  "compilerOptions": {{
+{
+  "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
@@ -496,13 +504,10 @@ _APP_TSCONFIG = '''\
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
-    "paths": {{
-      "@forge-suite/ts": [".forge/ts-alias-placeholder"]
-    }}
-  }},
+    "strict": true
+  },
   "include": ["src"]
-}}
+}
 '''
 
 _APP_INDEX_HTML = '''\
@@ -522,31 +527,110 @@ _APP_INDEX_HTML = '''\
 
 _APP_MAIN_TSX = '''\
 import React from "react";
-import {{ createRoot }} from "react-dom/client";
-import {{ QueryClient, QueryClientProvider }} from "@tanstack/react-query";
-import {{ App }} from "./App.js";
+import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@forge-suite/ts/forge.css";
+import "./index.css";
+import { App } from "./App.js";
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={{queryClient}}>
+  <QueryClientProvider client={queryClient}>
     <App />
   </QueryClientProvider>
 );
 '''
 
+_APP_INDEX_CSS = '''\
+/* Project-specific styles — forge.css is imported in main.tsx */
+
+body {{
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}}
+
+#root {{ min-height: 100vh; }}
+'''
+
 _APP_APP_TSX = '''\
-import React from "react";
+import React, {{ useState }} from "react";
+import {{ Container }} from "@forge-suite/ts";
+import {{ Sidebar }} from "./components/Sidebar.js";
+import {{ Landing }} from "./pages/landing.js";
+
+export type Page = "landing";
 
 export function App() {{
+  const [page, setPage] = useState<Page>("landing");
+
   return (
-    <div style={{{{ fontFamily: "system-ui, sans-serif", padding: 24 }}}}>
-      <h1>{app_name}</h1>
-      <p>
-        Your Forge app. Import from <code>@forge-suite/ts</code> to fetch
-        object sets and call endpoints.
-      </p>
-    </div>
+    <Container direction='row' style={{{{ minHeight: "100vh" }}}}>
+      <Sidebar activePage={{page}} onNavigate={{setPage}} />
+      <Container direction='column' size={{1}} padding={{24}}>
+        {{page === "landing" && <Landing />}}
+      </Container>
+    </Container>
+  );
+}}
+'''
+
+_APP_SIDEBAR_TSX = '''\
+import React from "react";
+import {{ Container, Navbar }} from "@forge-suite/ts";
+import type {{ Page }} from "../App.js";
+
+const NAV_ITEMS = [
+  {{ id: "landing", label: "Home", icon: "◈" }},
+] as const;
+
+interface Props {{
+  activePage: Page;
+  onNavigate: (p: Page) => void;
+}}
+
+export function Sidebar({{ activePage, onNavigate }}: Props) {{
+  return (
+    <Container
+      direction='column'
+      size='220px'
+      separator
+      style={{{{
+        minHeight: "100vh",
+        background: "var(--bg-panel)",
+        borderRight: "1px solid var(--border)",
+      }}}}
+    >
+      <Container direction='row' gap={{8}} padding='18px 16px 14px'>
+        <span style={{{{ fontWeight: 700, fontSize: 15 }}}}>{app_name}</span>
+      </Container>
+      <Navbar
+        orientation='vertical'
+        items={{NAV_ITEMS.map((item) => ({{
+          id: item.id,
+          label: item.label,
+          icon: item.icon,
+          active: activePage === item.id,
+          onClick: () => onNavigate(item.id as Page),
+        }}))}}
+        style={{{{ padding: "4px 0" }}}}
+      />
+    </Container>
+  );
+}}
+'''
+
+_APP_LANDING_TSX = '''\
+import React from "react";
+import {{ Container }} from "@forge-suite/ts";
+
+export function Landing() {{
+  return (
+    <Container direction='row' padding={{24}} alignItems='center'>
+      <p>Hello World!</p>
+    </Container>
   );
 }}
 '''
@@ -568,13 +652,18 @@ def create_app(
 
     app_dir.mkdir(parents=True, exist_ok=True)
     (app_dir / "src").mkdir(exist_ok=True)
+    (app_dir / "src" / "pages").mkdir(exist_ok=True)
+    (app_dir / "src" / "components").mkdir(exist_ok=True)
 
     (app_dir / "package.json").write_text(_APP_PACKAGE_JSON.format(app_name=name))
-    (app_dir / "vite.config.ts").write_text(_APP_VITE_CONFIG.format(port=port))
+    (app_dir / "vite.config.ts").write_text(_APP_VITE_CONFIG.format())
     (app_dir / "index.html").write_text(_APP_INDEX_HTML.format(app_name=name))
     (app_dir / "tsconfig.json").write_text(_APP_TSCONFIG)
     (app_dir / "src" / "main.tsx").write_text(_APP_MAIN_TSX)
-    (app_dir / "src" / "App.tsx").write_text(_APP_APP_TSX.format(app_name=name))
+    (app_dir / "src" / "index.css").write_text(_APP_INDEX_CSS)
+    (app_dir / "src" / "App.tsx").write_text(_APP_APP_TSX.format())
+    (app_dir / "src" / "components" / "Sidebar.tsx").write_text(_APP_SIDEBAR_TSX.format(app_name=name))
+    (app_dir / "src" / "pages" / "landing.tsx").write_text(_APP_LANDING_TSX.format(app_name=name))
 
     command_file = root / f"{name}.command"
     command_file.write_text(_APP_COMMAND.format(app_name=name, port=port))
@@ -588,7 +677,7 @@ def create_app(
         suite_root_file.parent.mkdir(parents=True, exist_ok=True)
         suite_root_file.write_text(str(suite_root))
 
-    _patch_toml_apps(root, name, port)
+    _patch_toml_apps(root, name)
 
     npm = shutil.which("npm")
     npm_ok = False
@@ -596,18 +685,27 @@ def create_app(
         result = subprocess.run([npm, "install"], cwd=str(app_dir), capture_output=True)
         npm_ok = result.returncode == 0
 
-    return {"path": str(app_dir), "name": name, "port": port, "npm_installed": npm_ok}
+    # Symlink @forge-suite/ts into node_modules so IDE and tsc can resolve types
+    if suite_root is not None:
+        forge_ts_src = Path(suite_root) / "forge-framework" / "packages" / "forge-ts"
+        if forge_ts_src.exists():
+            scope_dir = app_dir / "node_modules" / "@forge-suite"
+            scope_dir.mkdir(parents=True, exist_ok=True)
+            ts_link = scope_dir / "ts"
+            if not ts_link.exists():
+                ts_link.symlink_to(forge_ts_src.resolve())
+
+    return {"path": str(app_dir), "name": name, "npm_installed": npm_ok}
 
 
-def _patch_toml_apps(root: Path, name: str, port: str) -> None:
+def _patch_toml_apps(root: Path, name: str) -> None:
     toml_path = root / "forge.toml"
     if not toml_path.exists():
         return
     cfg = read_toml(toml_path)
     if any(a.get("name") == name for a in cfg.get("apps", [])):
         return
-    app_id = re.sub(r"[^a-z0-9_]", "_", name)
     toml_path.write_text(
         toml_path.read_text()
-        + f'\n[[apps]]\nname = "{name}"\nid = "{app_id}"\npath = "./apps/{name}"\nport = "{port}"\n'
+        + f'\n[[apps]]\nname = "{name}"\npath = "./apps/{name}"\n'
     )

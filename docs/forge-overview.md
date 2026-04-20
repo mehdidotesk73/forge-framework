@@ -94,21 +94,19 @@ name = "students"
 path = "data/students.csv"
 
 [[pipelines]]
-id       = "bbbbbbbb-0000-0000-0000-000000000001"
-name     = "normalize_students"
-module   = "pipelines.normalize"
-function = "run"
-schedule = "0 6 * * *"          # optional cron
+id           = "bbbbbbbb-0000-0000-0000-000000000001"
+display_name = "normalize_students"
+module       = "pipelines.normalize"
+function     = "run"
+schedule     = "0 6 * * *"          # optional cron
 
 [[models]]
-name   = "Student"
-mode   = "snapshot"
-module = "models.student"
-class  = "Student"
+class_name = "Student"
+mode       = "snapshot"
+module     = "models.student"
 
 [[endpoint_repos]]
-name = "student_endpoints"
-path = "endpoints/student"
+module = "endpoint_repos.student_endpoints"
 
 [[apps]]
 name = "student_manager"

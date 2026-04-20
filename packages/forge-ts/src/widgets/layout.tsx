@@ -31,8 +31,13 @@ export interface ContainerProps {
   /** Grid layout mode. */
   layout?: "flex" | "grid";
   columns?: number;
-  /** Cross-axis alignment of children (CSS align-items). "center" is the most common use case for row containers. */
-  alignItems?: React.CSSProperties["alignItems"];
+  /**
+   * Main-axis alignment of children.
+   * Row containers accept: "left" | "center" | "right"
+   * Column containers accept: "top" | "center" | "bottom"
+   * Maps to CSS justify-content.
+   */
+  alignItems?: "left" | "center" | "right" | "top" | "bottom";
   /** Optional section title rendered at the top of the container. */
   title?: string;
   /** Title visual weight. "sm" = muted label; "md" = normal heading; "lg" = prominent heading. */
@@ -41,8 +46,33 @@ export interface ContainerProps {
   titleIcon?: string;
   /** CSS color for the title icon. Defaults to accent color for lg, muted for sm/md. */
   titleIconColor?: string;
+  /** Background fill. "none" = transparent (default); "panel", "card", "surface" map to theme bg vars. */
+  variant?: "none" | "panel" | "card" | "surface";
   className?: string;
   style?: React.CSSProperties;
+}
+
+const VARIANT_STYLE: Record<string, React.CSSProperties> = {
+  panel: { background: "var(--bg-panel)", border: "1px solid var(--border)" },
+  card: {
+    background: "var(--bg-card)",
+    border: "1px solid color-mix(in srgb, var(--border) 80%, transparent)",
+  },
+  surface: {
+    background: "var(--bg-surface)",
+    border:
+      "1px solid color-mix(in srgb, var(--border) 120%, var(--bg-surface))",
+  },
+};
+
+function toJustifyContent(
+  alignItems: ContainerProps["alignItems"],
+): React.CSSProperties["justifyContent"] | undefined {
+  if (!alignItems) return undefined;
+  if (alignItems === "center") return "center";
+  if (alignItems === "left" || alignItems === "top") return "flex-start";
+  if (alignItems === "right" || alignItems === "bottom") return "flex-end";
+  return undefined;
 }
 
 const TITLE_STYLES: Record<"sm" | "md" | "lg", React.CSSProperties> = {
@@ -70,7 +100,7 @@ const TITLE_STYLES: Record<"sm" | "md" | "lg", React.CSSProperties> = {
 };
 
 export function Container({
-  direction = "column",
+  direction = "row",
   size,
   gap = 0,
   padding = 0,
@@ -81,6 +111,7 @@ export function Container({
   layout = "flex",
   columns = 2,
   alignItems,
+  variant = "none",
   title,
   titleSize = "sm",
   titleIcon,
@@ -88,6 +119,8 @@ export function Container({
   className = "",
   style: styleProp,
 }: ContainerProps) {
+  const bgStyle: React.CSSProperties =
+    variant !== "none" ? VARIANT_STYLE[variant] : {};
   const sizeStyle: React.CSSProperties = {};
   if (size !== undefined) {
     if (typeof size === "number") {
@@ -132,17 +165,26 @@ export function Container({
       <div
         className={`forge-container ${className}`}
         style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          gap,
+          display: "flex",
+          flexDirection: "column",
           padding,
-          alignItems,
+          ...bgStyle,
           ...sizeStyle,
           ...styleProp,
         }}
       >
         {titleEl}
-        {children ?? startChildren}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${columns}, 1fr)`,
+            gap,
+            justifyContent: toJustifyContent(alignItems),
+            flex: 1,
+          }}
+        >
+          {children ?? startChildren}
+        </div>
       </div>
     );
   }
@@ -166,7 +208,11 @@ export function Container({
     const result: React.ReactNode[] = [];
     React.Children.forEach(nodes, (child) => {
       if (React.isValidElement(child) && child.type === React.Fragment) {
-        result.push(...flattenNodes((child.props as { children?: React.ReactNode }).children));
+        result.push(
+          ...flattenNodes(
+            (child.props as { children?: React.ReactNode }).children,
+          ),
+        );
       } else {
         result.push(child);
       }
@@ -186,6 +232,34 @@ export function Container({
 
   // Simple mode: all children in one group
   if (!hasGroups) {
+    if (titleEl) {
+      return (
+        <div
+          className={`forge-container ${className}`}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            padding,
+            ...bgStyle,
+            ...sizeStyle,
+            ...styleProp,
+          }}
+        >
+          {titleEl}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: direction,
+              gap: separator ? 0 : gap,
+              justifyContent: toJustifyContent(alignItems),
+              flex: 1,
+            }}
+          >
+            {withSep(children)}
+          </div>
+        </div>
+      );
+    }
     return (
       <div
         className={`forge-container ${className}`}
@@ -194,12 +268,12 @@ export function Container({
           flexDirection: direction,
           gap: separator ? 0 : gap,
           padding,
-          alignItems,
+          justifyContent: toJustifyContent(alignItems),
+          ...bgStyle,
           ...sizeStyle,
           ...styleProp,
         }}
       >
-        {titleEl}
         {withSep(children)}
       </div>
     );
@@ -217,26 +291,36 @@ export function Container({
       className={`forge-container ${className}`}
       style={{
         display: "flex",
-        flexDirection: direction,
-        alignItems,
+        flexDirection: titleEl ? "column" : direction,
+        justifyContent: titleEl ? undefined : toJustifyContent(alignItems),
+        ...bgStyle,
         ...sizeStyle,
         ...styleProp,
       }}
     >
       {titleEl}
-      {startChildren !== undefined && (
-        <div style={{ display: "flex", flexDirection: direction }}>
-          {withSep(startChildren)}
-        </div>
-      )}
-      {endChildren !== undefined && <div style={{ flex: 1 }} />}
-      {endChildren !== undefined && (
-        <div
-          style={{ display: "flex", flexDirection: direction, ...endBorder }}
-        >
-          {withSep(endChildren)}
-        </div>
-      )}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: direction,
+          flex: 1,
+          justifyContent: toJustifyContent(alignItems),
+        }}
+      >
+        {startChildren !== undefined && (
+          <div style={{ display: "flex", flexDirection: direction }}>
+            {withSep(startChildren)}
+          </div>
+        )}
+        {endChildren !== undefined && <div style={{ flex: 1 }} />}
+        {endChildren !== undefined && (
+          <div
+            style={{ display: "flex", flexDirection: direction, ...endBorder }}
+          >
+            {withSep(endChildren)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -265,9 +349,27 @@ export interface NavbarProps {
 }
 
 const NAVBAR_ITEM_SIZES = {
-  sm: { fontSize: 11, padding: "5px 8px",  iconSize: 12, gap: 7,  borderRadius: 4 },
-  md: { fontSize: 13, padding: "8px 10px", iconSize: 14, gap: 10, borderRadius: 6 },
-  lg: { fontSize: 15, padding: "10px 12px", iconSize: 16, gap: 12, borderRadius: 7 },
+  sm: {
+    fontSize: 11,
+    padding: "5px 8px",
+    iconSize: 12,
+    gap: 7,
+    borderRadius: 4,
+  },
+  md: {
+    fontSize: 13,
+    padding: "8px 10px",
+    iconSize: 14,
+    gap: 10,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 15,
+    padding: "10px 12px",
+    iconSize: 16,
+    gap: 12,
+    borderRadius: 7,
+  },
 } as const;
 
 export function Navbar({
@@ -299,11 +401,18 @@ export function Navbar({
             {title}
           </div>
         )}
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "4px 8px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            padding: "4px 8px",
+          }}
+        >
           {items.map((item, i) => (
             <button
               key={item.id ?? i}
-              type="button"
+              type='button'
               onClick={item.onClick}
               style={{
                 display: "flex",
@@ -322,7 +431,12 @@ export function Navbar({
               }}
             >
               {item.icon && (
-                <span style={{ fontSize: s.iconSize, color: item.active ? "var(--accent)" : "inherit" }}>
+                <span
+                  style={{
+                    fontSize: s.iconSize,
+                    color: item.active ? "var(--accent)" : "inherit",
+                  }}
+                >
                   {item.icon}
                 </span>
               )}
@@ -335,14 +449,17 @@ export function Navbar({
   }
 
   return (
-    <nav className={`forge-navbar forge-navbar-${size} ${className}`} style={styleProp}>
-      {title && <div className="forge-navbar-title">{title}</div>}
-      <div className="forge-navbar-items">
+    <nav
+      className={`forge-navbar forge-navbar-${size} ${className}`}
+      style={styleProp}
+    >
+      {title && <div className='forge-navbar-title'>{title}</div>}
+      <div className='forge-navbar-items'>
         {items.map((item, i) =>
           item.onClick ? (
             <button
               key={item.id ?? i}
-              type="button"
+              type='button'
               className={`forge-navbar-item ${item.active ? "forge-navbar-item-active" : ""}`}
               onClick={item.onClick}
             >
@@ -359,7 +476,7 @@ export function Navbar({
           ),
         )}
       </div>
-      {rightContent && <div className="forge-navbar-right">{rightContent}</div>}
+      {rightContent && <div className='forge-navbar-right'>{rightContent}</div>}
     </nav>
   );
 }

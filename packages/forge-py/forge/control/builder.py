@@ -33,12 +33,10 @@ class EndpointBuilder:
         return registry
 
     def build_repo(self, repo_cfg: EndpointRepoConfig) -> dict[str, Any]:
-        repo_path = (self.root / repo_cfg.path).resolve()
+        repo_path = (self.root / repo_cfg.module.replace(".", "/")).resolve()
         # Project root must be on path so endpoint modules can import model classes
         if str(self.root) not in sys.path:
             sys.path.insert(0, str(self.root))
-        if str(repo_path) not in sys.path:
-            sys.path.insert(0, str(repo_path))
 
         # Import all Python modules in the repo to trigger decorator registration
         self._import_repo_modules(repo_path)
@@ -46,8 +44,8 @@ class EndpointBuilder:
         descriptors: dict[str, Any] = {}
         registry = get_endpoint_registry()
         for ep_id, defn in registry.items():
-            if defn.module.startswith(repo_cfg.name) or self._module_in_repo(defn.module, repo_path):
-                descriptor = self._build_descriptor(defn, repo_cfg.name)
+            if defn.module == repo_cfg.module or defn.module.startswith(repo_cfg.module + "."):
+                descriptor = self._build_descriptor(defn, repo_cfg.module)
                 descriptors[ep_id] = descriptor
 
         return descriptors
@@ -57,18 +55,13 @@ class EndpointBuilder:
         for py_file in repo_path.rglob("*.py"):
             if py_file.name.startswith("_") or py_file.name in _SKIP:
                 continue
-            rel = py_file.relative_to(repo_path)
+            rel = py_file.relative_to(self.root)
             module_name = str(rel.with_suffix("")).replace("/", ".").replace("\\", ".")
             try:
                 importlib.import_module(module_name)
             except Exception as exc:
                 import logging
                 logging.getLogger(__name__).debug("Could not import %s: %s", module_name, exc)
-
-    def _module_in_repo(self, module: str, repo_path: Path) -> bool:
-        # Check if the module file lives under repo_path
-        mod_file = module.replace(".", "/") + ".py"
-        return (repo_path / mod_file).exists()
 
     def _build_descriptor(
         self,

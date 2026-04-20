@@ -32,7 +32,7 @@ def pipeline_run(name: str) -> None:
     pipeline_cfg = config.pipeline_by_name.get(name)
     if pipeline_cfg is None:
         console.print(f"[red]Pipeline '{name}' not found in forge.toml[/red]")
-        available = [p.name for p in config.pipelines]
+        available = [p.display_name for p in config.pipelines]
         if available:
             console.print(f"Available: {', '.join(available)}")
         raise SystemExit(1)
@@ -82,10 +82,10 @@ def pipeline_dag() -> None:
     for p in config.pipelines:
         try:
             defn = runner.load_pipeline(p.module, p.function)
-            defn.name = p.name  # use config name for DAG display
+            defn.name = p.display_name  # use config name for DAG display
             pipeline_defs.append(defn)
         except Exception as exc:
-            console.print(f"[yellow]Warning: could not load {p.name}: {exc}[/yellow]")
+            console.print(f"[yellow]Warning: could not load {p.display_name}: {exc}[/yellow]")
 
     nodes, edges = build_dag(pipeline_defs)
     console.print(render_dag(nodes, edges))
@@ -105,7 +105,7 @@ def pipeline_list() -> None:
     table.add_column("Schedule")
     table.add_column("Module")
     for p in config.pipelines:
-        table.add_row(p.name, p.id, p.schedule or "-", p.module)
+        table.add_row(p.display_name, p.id, p.schedule or "-", p.module)
     console.print(table)
 
 
@@ -131,7 +131,7 @@ def pipeline_history(name: str) -> None:
     config, engine, runner, root = _get_runner()
     # Accept either name or UUID
     pipeline_cfg = config.pipeline_by_name.get(name) or config.pipeline_by_id.get(name)
-    resolved_name = pipeline_cfg.name if pipeline_cfg else name
+    resolved_name = pipeline_cfg.display_name if pipeline_cfg else name
     history = engine.get_pipeline_history(resolved_name)
 
     if not history:

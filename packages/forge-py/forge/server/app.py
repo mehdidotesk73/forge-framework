@@ -71,8 +71,8 @@ def create_app(
             raise HTTPException(404, f"Pipeline '{pipeline_id}' not found")
         try:
             defn = runner.load_pipeline(pipeline_cfg.module, pipeline_cfg.function)
-            result = runner.run(defn, config_name=pipeline_cfg.name)
-            return {**result, "pipeline_name": pipeline_cfg.name, "pipeline_id": pipeline_id}
+            result = runner.run(defn, config_name=pipeline_cfg.display_name)
+            return {**result, "pipeline_name": pipeline_cfg.display_name, "pipeline_id": pipeline_id}
         except Exception as exc:
             raise HTTPException(500, str(exc)) from exc
 
@@ -81,12 +81,12 @@ def create_app(
         pipeline_cfg = config.pipeline_by_id.get(pipeline_id)
         if pipeline_cfg is None:
             raise HTTPException(404, f"Pipeline '{pipeline_id}' not found")
-        return engine.get_pipeline_history(pipeline_cfg.name)
+        return engine.get_pipeline_history(pipeline_cfg.display_name)
 
     @app.get("/api/pipelines")
     def list_pipelines() -> list[dict]:
         return [
-            {"id": p.id, "name": p.name, "schedule": p.schedule}
+            {"id": p.id, "name": p.display_name, "schedule": p.schedule}
             for p in config.pipelines
         ]
 
@@ -227,15 +227,12 @@ def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
         sys.path.insert(0, root_str)
 
     for repo_cfg in config.endpoint_repos:
-        repo_path = (root / repo_cfg.path).resolve()
-        repo_str = str(repo_path)
-        if repo_str not in sys.path:
-            sys.path.insert(0, repo_str)
+        repo_path = (root / repo_cfg.module.replace(".", "/")).resolve()
         _SKIP = {"setup.py", "conftest.py"}
         for py_file in repo_path.rglob("*.py"):
             if py_file.name.startswith("_") or py_file.name in _SKIP:
                 continue
-            rel = py_file.relative_to(repo_path)
+            rel = py_file.relative_to(root)
             module_name = str(rel.with_suffix("")).replace("/", ".").replace("\\", ".")
             try:
                 importlib.import_module(module_name)

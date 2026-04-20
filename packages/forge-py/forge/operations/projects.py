@@ -225,7 +225,7 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
             continue
         input_ids, output_ids = try_load_pipeline_io(root, module, func)
         pipelines.append({
-            "name": p.get("name", ""),
+            "name": p.get("display_name") or p.get("name", ""),
             "module": module,
             "function": func,
             "schedule": p.get("schedule", ""),
@@ -236,7 +236,7 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
     # Models
     models = []
     for m in cfg.get("models", []):
-        obj_name = m.get("name", "")
+        obj_name = m.get("class_name") or m.get("name", "")
         schema_path = artifacts_dir / f"{obj_name}.schema.json"
         field_count = ""
         built_at = ""
@@ -269,11 +269,17 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
 
     endpoint_repos = []
     for repo in cfg.get("endpoint_repos", []):
-        repo_name = repo.get("name", "")
-        eps_in_repo = [e for e in endpoints_registry.values() if e.get("repo") == repo_name]
+        repo_module = repo.get("module", "")
+        # Derive display name: last segment of module, or fall back to old "name" field
+        repo_name = repo_module.split(".")[-1] if repo_module else repo.get("name", "")
+        eps_in_repo = [
+            e for e in endpoints_registry.values()
+            if e.get("repo") == repo_module or e.get("repo") == repo_name
+        ]
         endpoint_repos.append({
             "name": repo_name,
-            "path": repo.get("path", ""),
+            "module": repo_module,
+            "path": repo_module.replace(".", "/") if repo_module else "",
             "endpoints": eps_in_repo,
         })
 
@@ -282,7 +288,7 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
     for app in cfg.get("apps", []):
         apps.append({
             "name": app.get("name", ""),
-            "app_id": app.get("id", app.get("name", "")),
+            "app_id": app.get("name", ""),
             "path": app.get("path", ""),
             "port": app.get("port", ""),
         })
