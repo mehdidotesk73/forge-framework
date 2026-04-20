@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
+import sys
 import uuid
 from pathlib import Path
 
@@ -665,9 +666,10 @@ def create_app(
     (app_dir / "src" / "components" / "Sidebar.tsx").write_text(_APP_SIDEBAR_TSX.format(app_name=name))
     (app_dir / "src" / "pages" / "landing.tsx").write_text(_APP_LANDING_TSX.format(app_name=name))
 
-    command_file = root / f"{name}.command"
-    command_file.write_text(_APP_COMMAND.format(app_name=name, port=port))
-    command_file.chmod(0o755)
+    if sys.platform != "win32":
+        command_file = root / f"{name}.command"
+        command_file.write_text(_APP_COMMAND.format(app_name=name, port=port))
+        command_file.chmod(0o755)
 
     # Write .forge/suite_root so vite.config.ts can resolve forge-ts at IDE/build time
     if suite_root is None:
@@ -685,7 +687,8 @@ def create_app(
         result = subprocess.run([npm, "install"], cwd=str(app_dir), capture_output=True)
         npm_ok = result.returncode == 0
 
-    # Symlink @forge-suite/ts into node_modules so IDE and tsc can resolve types
+    # Symlink @forge-suite/ts into node_modules so IDE and tsc can resolve types.
+    # Symlinks require Developer Mode or admin on Windows; skip gracefully if unavailable.
     if suite_root is not None:
         forge_ts_src = Path(suite_root) / "forge-framework" / "packages" / "forge-ts"
         if forge_ts_src.exists():
@@ -693,7 +696,10 @@ def create_app(
             scope_dir.mkdir(parents=True, exist_ok=True)
             ts_link = scope_dir / "ts"
             if not ts_link.exists():
-                ts_link.symlink_to(forge_ts_src.resolve())
+                try:
+                    ts_link.symlink_to(forge_ts_src.resolve())
+                except OSError:
+                    pass
 
     return {"path": str(app_dir), "name": name, "npm_installed": npm_ok}
 
