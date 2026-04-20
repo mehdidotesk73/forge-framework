@@ -33,12 +33,28 @@ def _save_run_ports(root: Path, data: dict) -> None:
 
 
 def _is_pid_alive(pid: int) -> bool:
-    import os
-    try:
-        os.kill(int(pid), 0)
-        return True
-    except OSError:
-        return False
+    import sys
+    if sys.platform == "win32":
+        # os.kill(pid, 0) on Windows calls GenerateConsoleCtrlEvent(CTRL_C_EVENT, pid)
+        # which sends CTRL+C to the process group — never use it for a liveness check.
+        import ctypes
+        import ctypes.wintypes
+        PROCESS_QUERY_INFORMATION = 0x0400
+        handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_INFORMATION, False, int(pid))
+        if not handle:
+            return False
+        exit_code = ctypes.wintypes.DWORD()
+        ok = ctypes.windll.kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code))
+        ctypes.windll.kernel32.CloseHandle(handle)
+        STILL_ACTIVE = 259
+        return bool(ok) and exit_code.value == STILL_ACTIVE
+    else:
+        import os
+        try:
+            os.kill(int(pid), 0)
+            return True
+        except OSError:
+            return False
 
 
 def _get_app(project_id: str, app_name: str):
