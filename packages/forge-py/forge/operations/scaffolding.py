@@ -427,7 +427,7 @@ _APP_PACKAGE_JSON = '''\
     "preview": "vite preview"
   }},
   "dependencies": {{
-    "@forge-suite/ts": "*",
+    "@forge-suite/ts": "^{forge_ts_version}",
     "@tanstack/react-query": "^5.40.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -473,19 +473,22 @@ function forgeTsSrc(): string | null {{
 }}
 
 const forgeTsSrcPath = forgeTsSrc();
+const appNodeModules = resolve(__dirname, "node_modules");
 
 export default defineConfig({{
   plugins: [react()],
-  ...(forgeTsSrcPath ? {{
-    resolve: {{
+  resolve: {{
+    modules: [appNodeModules, "node_modules"],
+    ...(forgeTsSrcPath ? {{
       alias: {{
         "@forge-suite/ts/forge.css": forgeTsSrcPath.replace("index.ts", "forge.css"),
         "@forge-suite/ts/runtime": forgeTsSrcPath.replace("index.ts", "runtime/index.ts"),
         "@forge-suite/ts": forgeTsSrcPath,
       }},
-    }},
-  }} : {{}}),
+    }} : {{}}),
+  }},
   server: {{
+    fs: {{ allow: ["../.."] }},
     proxy: {{
       "/api": `http://localhost:${{process.env.VITE_API_PORT || "8000"}}`,
       "/endpoints": `http://localhost:${{process.env.VITE_API_PORT || "8000"}}`,
@@ -659,7 +662,15 @@ def create_app(
     (app_dir / "src" / "pages").mkdir(exist_ok=True)
     (app_dir / "src" / "components").mkdir(exist_ok=True)
 
-    (app_dir / "package.json").write_text(_APP_PACKAGE_JSON.format(app_name=name), encoding="utf-8")
+    try:
+        from importlib.metadata import version as _pkg_version
+        _forge_ts_version = _pkg_version("forge-suite")
+    except Exception:
+        _forge_ts_version = "0.1.0"
+    (app_dir / "package.json").write_text(
+        _APP_PACKAGE_JSON.format(app_name=name, forge_ts_version=_forge_ts_version),
+        encoding="utf-8",
+    )
     (app_dir / "vite.config.ts").write_text(_APP_VITE_CONFIG.format(), encoding="utf-8")
     (app_dir / "index.html").write_text(_APP_INDEX_HTML.format(app_name=name), encoding="utf-8")
     (app_dir / "tsconfig.json").write_text(_APP_TSCONFIG, encoding="utf-8")
