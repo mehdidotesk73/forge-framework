@@ -411,7 +411,14 @@ if [ "$FROM_PHASE" -le 5 ]; then
   mkdir -p "$REPO_ROOT/packages/forge-py/forge/docs"
   cp "$REPO_ROOT/docs/"*.md "$REPO_ROOT/packages/forge-py/forge/docs/"
   DOC_COUNT=$(ls "$REPO_ROOT/packages/forge-py/forge/docs/" | wc -l | tr -d ' ')
-  log_ok "Bundled $DOC_COUNT docs files"
+  log_ok "Bundled $DOC_COUNT docs files into forge-py"
+
+  # Bundle docs into forge-suite
+  log_step "Bundling docs into forge-suite package..."
+  rm -rf "$REPO_ROOT/packages/forge-suite/forge_suite/docs"
+  mkdir -p "$REPO_ROOT/packages/forge-suite/forge_suite/docs"
+  cp "$REPO_ROOT/docs/"*.md "$REPO_ROOT/packages/forge-suite/forge_suite/docs/"
+  log_ok "Bundled $DOC_COUNT docs files into forge-suite"
 
   for pkg in forge-py forge-suite; do
     PKG_DIR="$REPO_ROOT/packages/$pkg"

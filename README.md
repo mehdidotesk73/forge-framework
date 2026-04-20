@@ -1,55 +1,16 @@
 # Forge Framework
 
-Forge is a layered data application framework for building full-stack, data-driven applications. A Forge project declares Forge as a dependency and defines its own pipelines, models, endpoints, and React UI. This repo is the framework itself — install it and run `forge init` to start a project.
+Forge is a layered data application framework for building full-stack, data-driven applications. A Forge project declares Forge as a dependency and defines its own pipelines, models, endpoints, and React UI.
+
+**This repo is the framework itself.** Forge projects live in separate directories and install Forge as a dependency via pip.
 
 ---
 
-## Installation
+## Getting Started
 
-Run `setup.command` once to set up the Python virtual environment and install all dependencies:
+If you are building a Forge project (not developing the framework itself), start here:
 
-```bash
-# In Finder — double-click setup.command
-# In Terminal:
-bash setup.command
-```
-
-This creates `.venv/`, installs `forge-framework` and `forge-suite`, installs npm workspace dependencies, and bootstraps the Forge Suite management webapp. Run it only once — re-running it after a project has been created will regenerate dataset UUIDs and break any registered projects.
-
----
-
-## Running Forge Suite
-
-After setup, choose your preferred interface:
-
-### CLI — `forge-suite-cli.command`
-
-A terminal-based interface for managing and operating Forge projects without the webapp.
-
-```bash
-# In Finder — double-click forge-suite-cli.command
-# In Terminal (direct command):
-bash forge-suite-cli.command init ~/my-projects/my-app
-bash forge-suite-cli.command pipeline-run ~/my-projects/my-app normalize_data
-bash forge-suite-cli.command model-build ~/my-projects/my-app
-bash forge-suite-cli.command endpoint-build ~/my-projects/my-app
-bash forge-suite-cli.command project-serve ~/my-projects/my-app
-```
-
-See `docs/forge-suite-cli.md` for the full command reference and lifecycle walkthrough.
-
-### Webapp — `forge-suite-webapp.command`
-
-A browser-based management UI for registering projects, viewing object sets, triggering pipelines, and calling endpoints.
-
-```bash
-# In Finder — double-click forge-suite-webapp.command
-# In Terminal:
-bash forge-suite-webapp.command
-# Opens http://localhost:5174 automatically
-```
-
-See `docs/forge-suite-webapp.md` for the full UI walkthrough and lifecycle guide.
+**[docs/01-project-getting-started.md](docs/01-project-getting-started.md)** — install, init, build, and run a complete Forge project from scratch.
 
 ---
 
@@ -85,20 +46,33 @@ Forge enforces four strictly separated layers. Each layer has its own build arti
 | Control | Model classes, endpoint decorators | Widget code, page layout |
 | View | Generated TS SDK, endpoint IDs | Python classes, DuckDB, dataset UUIDs |
 
+### Key design decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Decorator-based registration | Zero configuration — import the module and Forge discovers it |
+| Dataset UUIDs assigned at load time | Stable identity across schema changes and renames |
+| Immutable datasets + mutable snapshots | Pipeline outputs are auditable; model mutations are fast |
+| Unit of Work with dirty tracking | One atomic transaction per endpoint call; no explicit transaction management in user code |
+| Dual-language SDK generation | Type safety maintained across the Python/TypeScript boundary |
+| Context variables for engine/UoW | Thread-safe request-scoped access without explicit parameter passing |
+| JSON key lists for relations | No foreign-key constraint machinery; relations expressed in plain data |
+| Provider Protocol interfaces | `AuthProvider` and `DatabaseProvider` are `typing.Protocol` stubs today; swap implementations without changing project code |
+
 ---
 
 ## Documentation
 
 | Document | Contents |
 |----------|----------|
-| `docs/forge-overview.md` | Full architecture reference: storage, build sequence, design decisions |
-| `docs/new-project-guide.md` | End-to-end guide: init → pipeline → model → endpoint → app → dev server |
-| `docs/forge-suite-cli.md` | Full project lifecycle via the Forge Suite CLI |
-| `docs/forge-suite-webapp.md` | Full project lifecycle via the Forge Suite webapp UI |
-| `docs/pipeline-layer.md` | `@pipeline` decorator, scheduling, run history |
-| `docs/model-layer.md` | `@forge_model`, field defs, snapshot vs. stream, CRUD |
-| `docs/control-layer.md` | `@action_endpoint`, `@computed_attribute_endpoint`, business logic |
-| `docs/view-layer.md` | React widgets, generated TS SDK, state bindings |
+| `docs/01-project-getting-started.md` | Install, init, and build your first Forge project |
+| `docs/02-project-widget-reference.md` | All widgets with copy-paste examples |
+| `docs/10-layer-pipeline.md` | `@pipeline` decorator, scheduling, run history, DuckDB |
+| `docs/11-layer-model.md` | `@forge_model`, field defs, snapshot vs. stream, CRUD |
+| `docs/12-layer-control.md` | `@action_endpoint`, `@computed_attribute_endpoint`, UoW |
+| `docs/13-layer-view.md` | React widgets, generated TS SDK, state bindings |
+| `docs/20-suite-developer-guide.md` | Forge Suite architecture, dev workflows, CLI reference, publishing |
+| `docs/21-suite-todo.md` | Open items by layer |
 
 ---
 
@@ -106,9 +80,9 @@ Forge enforces four strictly separated layers. Each layer has its own build arti
 
 ```
 forge-framework/
-├── setup.command                    First-run installer
-├── forge-suite-cli.command          CLI interface launcher
-├── forge-suite-webapp.command       Webapp interface launcher
+├── setup.command                    First-run installer (framework development only)
+├── forge-suite-dev.command          Daily dev driver: API on :7999 + Vite UI on :5174
+├── forge-suite-verify.command       Pre-release smoke test: pre-built UI + API on :5174
 ├── packages/
 │   ├── forge-py/                    Python package (pip install forge-framework)  CLI: forge
 │   ├── forge-ts/                    TypeScript package (@forge-suite/ts)
@@ -121,18 +95,37 @@ forge-framework/
 
 ---
 
+## Framework Development
+
+To work on the framework itself (not a Forge project):
+
+```bash
+# One-time setup
+bash setup.command
+
+# Daily development (hot reload)
+bash forge-suite-dev.command      # API on :7999 + Vite dev server on :5174
+
+# Pre-release smoke test
+bash forge-suite-verify.command   # backend + pre-built UI on :5174
+```
+
+See `docs/20-suite-developer-guide.md` for the full developer guide.
+
+---
+
 ## Examples
 
 ### student-manager
 
 ```bash
 cd examples/student-manager
-bash setup.sh          # one-time only — generates dataset UUIDs
+bash setup.sh          # one-time only — assigns dataset UUIDs
 forge dev serve &
 cd apps/student-manager && npm install && npm run dev
 ```
 
-Demonstrates: snapshot Student object, stream Grade object, `create_student` action endpoint, `compute_student_metrics` computed column endpoint, Selector bound to timeframe, Modal + Form, two independent apps.
+Demonstrates: snapshot Student and Grade objects, `create_student`/`edit_student`/`delete_student` action endpoints, `compute_student_metrics` computed column endpoint, Selector bound to timeframe, Modal + Form, two independent apps.
 
 ### stock-monitor
 
@@ -143,18 +136,12 @@ forge dev serve &
 cd apps/monitor && npm install && npm run dev
 ```
 
-Demonstrates: stream Price object, scheduled pipeline, `compute_moving_average` computed column endpoint, Selector controlling MA window, Chart with price overlay.
+Demonstrates: stream StockPrice object, scheduled pipeline, `compute_moving_average` computed column endpoint, Selector controlling MA window, Chart with price overlay.
 
----
-
-## Snapshot vs Stream Objects
-
-**Snapshot** objects back a mutable copy of a dataset. On `forge model build`, the backing dataset is snapshotted and severed from the upstream pipeline. CRUD operations write to the snapshot. Run `forge model reinitialize <Type>` to drop and recreate the snapshot from the current pipeline output.
-
-**Stream** objects stay linked to a live pipeline output. When the pipeline reruns, the object set reflects new data automatically. Streams are read-only.
+> **Never run `setup.sh` more than once on the same project.** It regenerates dataset UUIDs on each run, which breaks `forge.toml` and corrupts the artifact chain.
 
 ---
 
 ## Versioning
 
-Python (`forge/version.py`) and TypeScript (`packages/forge-ts/package.json`) always carry the same version. The dev server warns on mismatch. `forge upgrade` runs declared migration steps for all intermediate versions and regenerates all artifacts.
+Python (`forge/version.py`) and TypeScript (`packages/forge-ts/package.json`) always carry the same version. The dev server warns on mismatch. Never bump versions manually — use `bash dev/release.sh patch` (or `minor`/`major`).

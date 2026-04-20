@@ -1,10 +1,16 @@
-# Forge — View Layer Developer Guide
+# Forge — View Layer
 
-## Purpose
+## What the View Layer Does
 
-The View layer renders data and captures user interactions using React. It imports the generated TypeScript SDK and endpoint IDs — nothing else from the backend. It never writes `fetch` calls, never constructs HTTP requests, and never imports Python model classes.
+The View layer renders data and captures user interactions using React. It is the only layer the end user sees. View code imports the generated TypeScript SDK and endpoint UUID constants — nothing else from the backend.
 
-The view layer is a standard React app. Forge supplies a widget library (`@forge-suite/ts`) and a runtime client that handles all HTTP communication with the Forge server.
+The view layer has no knowledge of pipelines, model internals, or Python. It receives data by calling generated loader functions, sends mutations through `callEndpoint()`, and wires everything together using Forge widgets from `@forge-suite/ts`.
+
+**Three things the view layer does:**
+
+1. **Load data** — call the generated `load<Name>Set()` function; receive a typed `ForgeObjectSet<T>`
+2. **Display data** — pass the object set to widgets (`ObjectTable`, `Chart`, `MetricTile`, etc.)
+3. **Mutate data** — invoke endpoints via `callEndpoint()` or `<Form>` widget; refresh on success
 
 ---
 
@@ -12,16 +18,17 @@ The view layer is a standard React app. Forge supplies a widget library (`@forge
 
 ### Install the widget library
 
+In a Forge project created by `forge app create`, `@forge-suite/ts` is already wired. For a standalone project:
+
 ```bash
 npm install @forge-suite/ts
-# or, in a monorepo workspace, the package is already available as @forge-suite/ts
 ```
 
 ### Configure the base URL
 
-In a browser, the client defaults to `window.location.origin`. When the app is served via the Vite dev server (as Forge Suite does), all `/api/*` and `/endpoints/*` requests are automatically proxied to the project backend — no configuration needed.
+By default, the Forge client targets `window.location.origin`. When using the Vite dev server, all `/api/*` and `/endpoints/*` requests are automatically proxied to the Forge backend — no configuration needed.
 
-Only call `configureForge` if you need to override the target (e.g., pointing directly at a remote backend):
+Only call `configureForge` when you need to override the target explicitly:
 
 ```typescript
 import { configureForge } from "@forge-suite/ts";
@@ -33,31 +40,29 @@ configureForge({ baseUrl: "https://my-server.example.com" });
 
 ## Loading Data
 
-### loadStudentSet
+### Generated loader function
 
-Import the generated loader from the generated SDK:
+`forge model build` generates a typed `load<Name>Set()` function for every model:
 
 ```typescript
 import { loadStudentSet } from "../.forge/generated/typescript/Student";
 
 const studentSet = await loadStudentSet({ limit: 100, offset: 0 });
-// studentSet: ForgeObjectSet<Student>
 // studentSet.rows    → Student[]
 // studentSet.schema  → ForgeSchema
-// studentSet.total   → number (total count in dataset)
+// studentSet.total   → number
 // studentSet.mode    → "snapshot" | "stream"
 ```
 
-The generated `load<Name>Set()` function calls `GET /api/objects/<Name>` internally. You never write this fetch yourself.
+Never write `fetch` calls for object data. The generated loader handles the HTTP call internally.
 
 ### Pagination
 
 ```typescript
 const page1 = await loadStudentSet({ limit: 50, offset: 0 });
 const page2 = await loadStudentSet({ limit: 50, offset: 50 });
+// studentSet.total gives the full row count
 ```
-
-`total` tells you how many records exist; use it to compute page count.
 
 ---
 
@@ -65,28 +70,23 @@ const page2 = await loadStudentSet({ limit: 50, offset: 50 });
 
 ### ObjectTable
 
-The primary widget for displaying a list of objects.
+The primary widget for tabular data. Renders column headers, sortable rows, computed columns, and row interactions.
 
 ```tsx
 import { ObjectTable } from "@forge-suite/ts";
 
-<ObjectTable
-  objectSet={studentSet}
-  className="my-table"
-/>
+<ObjectTable objectSet={studentSet} />
 ```
 
-**Sorting:** Click any column header to sort. Click again to reverse. The sort indicator (`↑` / `↓`) appears in the header.
+Click a column header to sort; click again to reverse. The sort indicator (`↑` / `↓`) appears in the header.
 
-**Density:** Controlled via CSS class — `forge-table-compact` or `forge-table-comfortable`.
-
-#### Interactions
+#### Row interactions
 
 ```tsx
 <ObjectTable
   objectSet={studentSet}
   interaction={{
-    mode: "single",                           // or "multi" for multi-select
+    mode: "single",
     onClick: {
       kind: "ui",
       handler: (student) => setSelected(student),
@@ -105,9 +105,11 @@ import { ObjectTable } from "@forge-suite/ts";
 />
 ```
 
-Right-click any row to open the context menu. Escape or click outside to close.
+Right-click any row to open the context menu. Escape or clicking outside closes it.
 
-#### Computed Columns
+#### Computed columns
+
+Computed column endpoints are called automatically with the visible rows' PKs:
 
 ```tsx
 <ObjectTable
@@ -117,7 +119,7 @@ Right-click any row to open the context menu. Escape or click outside to close.
       endpointId: "22222222-0000-0000-0000-000000000002",
       columns: ["gpa", "letter_rank"],
       params: {
-        timeframe: { stateKey: "selectedTimeframe" },
+        timeframe: { stateKey: "selectedTimeframe" },   // resolved from localState
       },
     },
   ]}
@@ -125,7 +127,9 @@ Right-click any row to open the context menu. Escape or click outside to close.
 />
 ```
 
-`ObjectTable` calls the computed column endpoint automatically, passing the visible rows' primary keys plus any resolved `params`. State bindings (`{ stateKey: "..." }`) are resolved from `localState` at fetch time — when `localState` changes, the columns re-fetch.
+When `localState` changes, any columns with a matching `stateKey` binding re-fetch automatically.
+
+---
 
 ### ObjectCard
 
@@ -137,31 +141,36 @@ import { ObjectCard } from "@forge-suite/ts";
 <ObjectCard
   object={student}
   schema={studentSet.schema}
-  layout="detail"         // "default" | "compact" | "detail"
+  layout="detail"             // "default" | "compact" | "detail"
   interaction={{
-    onClick: { kind: "ui", handler: (s) => openDetail(s) }
+    onClick: { kind: "ui", handler: (s) => openDetail(s) },
   }}
 />
 ```
 
+---
+
 ### MetricTile
 
-Aggregate a numeric field from an object set:
+Aggregate a numeric field or display a static value:
 
 ```tsx
 import { MetricTile } from "@forge-suite/ts";
 
+// Computed from an object set
 <MetricTile
-  label="Total Students"
+  label="Total Credits"
   objectSet={studentSet}
   field="credits"
   aggregation="sum"       // "count" | "sum" | "avg" | "min" | "max"
   format="number"         // "number" | "currency" | "percent"
 />
 
-// Or a static value:
+// Static value
 <MetricTile label="Active Cohort" value={42} format="number" />
 ```
+
+---
 
 ### Chart
 
@@ -175,34 +184,36 @@ import { Chart } from "@forge-suite/ts";
   chartType="line"          // "line" | "bar" | "area"
   xField="ts"
   series={[
-    { field: "close", label: "Close Price", color: "#6366f1" },
+    { field: "close",  label: "Close Price", color: "#6366f1" },
     { field: "volume", label: "Volume" },
   ]}
   height={300}
 />
 ```
 
-The x-axis uses `xField`; each `series` entry maps to one line/bar/area.
+The x-axis uses `xField`; each entry in `series` maps to one line, bar, or area.
+
+---
 
 ### FilterBar
 
-Client-side text filtering over an object set:
+Client-side text filtering over an object set. Filters are applied as AND conditions with case-insensitive substring matching:
 
 ```tsx
 import { FilterBar, applyFilterState } from "@forge-suite/ts";
 
 const [filters, setFilters] = useState({});
-const visible = applyFilterState(studentSet.rows, filters);
+const visibleRows = applyFilterState(studentSet.rows, filters);
 
 <FilterBar
   schema={studentSet.schema}
-  fields={["name", "major", "status"]}   // which fields to show filter inputs for
+  fields={["name", "major", "status"]}
   onChange={setFilters}
 />
-<ObjectTable objectSet={{ ...studentSet, rows: visible }} />
+<ObjectTable objectSet={{ ...studentSet, rows: visibleRows }} />
 ```
 
-`applyFilterState` does case-insensitive substring matching. All filters are applied as AND conditions.
+`applyFilterState` is a pure function — pass its result to any widget that accepts rows.
 
 ---
 
@@ -210,20 +221,22 @@ const visible = applyFilterState(studentSet.rows, filters);
 
 ### callEndpoint
 
+Invoke any action endpoint by UUID:
+
 ```typescript
 import { callEndpoint } from "@forge-suite/ts";
 
 const result = await callEndpoint<Student>(
-  "11111111-0000-0000-0000-000000000001",   // endpoint UUID — never the name
+  "11111111-0000-0000-0000-000000000001",
   { name: "Alice", email: "alice@example.com", major: "CS" }
 );
 ```
 
-Returns `Promise<T>` where T is the endpoint's return type. Throws on non-2xx responses.
+Always reference endpoints by UUID string constant. Never construct `/endpoints/...` URLs manually.
 
 ### Form widget (auto-rendered)
 
-The `Form` widget fetches the endpoint descriptor and renders an appropriate input for each param automatically. No manual form building required.
+`<Form>` fetches the endpoint descriptor and renders typed inputs automatically — no manual form building:
 
 ```tsx
 import { Form } from "@forge-suite/ts";
@@ -237,25 +250,28 @@ import { Form } from "@forge-suite/ts";
 />
 ```
 
-**Param → input widget mapping:**
+**Param type → input widget mapping:**
 
-| Param type | Widget |
-|------------|--------|
+| Param type | Widget rendered |
+|------------|----------------|
 | `string` | TextInput |
 | `integer` | NumberInput |
 | `float` | NumberInput |
 | `boolean` | Toggle |
 
-`prefill` sets initial values. If a key matches a param name, that field is pre-populated.
+`prefill` sets initial values; a key matching a param name pre-populates that field.
 
 ---
 
-## Input Widgets (standalone use)
+## Input Widgets
 
-Use these when you need custom form UIs beyond what `<Form>` auto-renders:
+Use standalone input widgets when `<Form>` auto-rendering is not sufficient:
 
 ```tsx
-import { TextInput, NumberInput, Toggle, Selector, MultiSelector, DateInput } from "@forge-suite/ts";
+import {
+  TextInput, NumberInput, Toggle,
+  Selector, MultiSelector, DateInput,
+} from "@forge-suite/ts";
 
 <TextInput
   value={name}
@@ -282,7 +298,7 @@ import { TextInput, NumberInput, Toggle, Selector, MultiSelector, DateInput } fr
 <Selector
   value={major}
   options={[
-    { value: "cs", label: "Computer Science" },
+    { value: "cs",   label: "Computer Science" },
     { value: "math", label: "Mathematics" },
   ]}
   onChange={setMajor}
@@ -308,6 +324,8 @@ import { TextInput, NumberInput, Toggle, Selector, MultiSelector, DateInput } fr
 
 ## File Upload
 
+Upload a CSV, Parquet, or JSON file as a new dataset:
+
 ```tsx
 import { FileUpload } from "@forge-suite/ts";
 
@@ -319,13 +337,15 @@ import { FileUpload } from "@forge-suite/ts";
 />
 ```
 
-Accepts `.csv`, `.parquet`, `.json`. POSTs to `/api/datasets/upload`. Returns `{id}` — the new dataset UUID.
+POSTs to `/api/datasets/upload`. `onSuccess` receives `{ id }` — the new dataset UUID.
 
 ---
 
 ## Layout Widgets
 
 ### Container
+
+Flex row or CSS grid layout:
 
 ```tsx
 import { Container } from "@forge-suite/ts";
@@ -336,7 +356,7 @@ import { Container } from "@forge-suite/ts";
   <MetricTile ... />
 </Container>
 
-// CSS Grid
+// CSS grid
 <Container layout="grid" columns={3} gap={16} padding={24}>
   <ObjectCard ... />
   <ObjectCard ... />
@@ -362,6 +382,8 @@ import { Navbar } from "@forge-suite/ts";
 
 ### Modal
 
+Portalled to `document.body`. Escape key and overlay click close the modal:
+
 ```tsx
 import { Modal } from "@forge-suite/ts";
 
@@ -377,8 +399,6 @@ import { Modal } from "@forge-suite/ts";
   />
 </Modal>
 ```
-
-Portalled to `document.body`. Escape key and overlay click close the modal.
 
 ### ButtonGroup
 
@@ -400,7 +420,6 @@ import { ButtonGroup } from "@forge-suite/ts";
   ]}
   renderMode="inline"       // "inline" | "menu"
   size="medium"
-  onAction={(action) => { /* optional global handler */ }}
 />
 ```
 
@@ -416,13 +435,13 @@ import { triggerPipeline } from "@forge-suite/ts";
 await triggerPipeline("normalize_students");
 ```
 
-POSTs to `/api/pipelines/{name}/run`. Useful for "Refresh Data" buttons.
+POSTs to `/api/pipelines/{name}/run`. Useful for "Refresh Data" buttons that re-pull from an external source.
 
 ---
 
-## ForgeAction Types
+## ForgeAction
 
-Actions in interactions, button groups, and context menus are typed as `ForgeAction`:
+Actions used in `interaction`, `ButtonGroup`, and context menus share the `ForgeAction` type:
 
 ```typescript
 // Local JavaScript handler
@@ -434,7 +453,7 @@ const uiAction: ForgeAction = {
   },
 };
 
-// Server endpoint call
+// Server-side endpoint call
 const serverAction: ForgeAction = {
   kind: "server",
   endpointId: "11111111-0000-0000-0000-000000000001",
@@ -446,7 +465,7 @@ const serverAction: ForgeAction = {
 
 ## State Binding for Computed Columns
 
-State bindings connect ObjectTable computed columns to React state, so computed values re-fetch when filters or selectors change:
+Connect computed column params to React state so they re-fetch when filters or selectors change:
 
 ```tsx
 const [timeframe, setTimeframe] = useState("all");
@@ -454,8 +473,8 @@ const [timeframe, setTimeframe] = useState("all");
 <Selector
   value={timeframe}
   options={[
-    { value: "all",  label: "All Time" },
-    { value: "F2024",label: "Fall 2024" },
+    { value: "all",   label: "All Time" },
+    { value: "F2024", label: "Fall 2024" },
   ]}
   onChange={setTimeframe}
   label="Timeframe"
@@ -467,25 +486,14 @@ const [timeframe, setTimeframe] = useState("all");
     endpointId: COMPUTE_METRICS_ID,
     columns: ["gpa", "letter_rank"],
     params: {
-      timeframe: { stateKey: "timeframe" },   // resolved from localState
+      timeframe: { stateKey: "timeframe" },
     },
   }]}
   localState={{ timeframe }}
 />
 ```
 
-When `timeframe` changes, `ObjectTable` detects the stateKey resolution differs and re-calls the endpoint.
-
----
-
-## Adding a New Widget
-
-1. Add the component to `packages/forge-ts/src/widgets/<WidgetName>.tsx`
-2. Export it from `packages/forge-ts/src/widgets/index.ts`
-3. Re-export from `packages/forge-ts/src/index.ts`
-4. Rebuild: `cd packages/forge-ts && npm run build`
-
-Only add a new widget if existing widgets cannot be configured to cover the need.
+When `timeframe` changes, `ObjectTable` detects the resolved value differs and re-calls the endpoint.
 
 ---
 
@@ -493,11 +501,11 @@ Only add a new widget if existing widgets cannot be configured to cover the need
 
 The View layer must **never**:
 
-- Write `fetch()`, `axios`, or any raw HTTP call for Forge data (use `loadStudentSet()`, `callEndpoint()`, etc.)
-- Import Python files or classes
-- Construct `/api/...` URLs directly (use the runtime client functions)
-- Import from `forge.model`, `forge.control`, or any Python module
-- Reference dataset UUIDs (reference endpoint UUIDs and model names only)
+- Write `fetch()`, `axios`, or any raw HTTP call for Forge data — use `load<Name>Set()`, `callEndpoint()`, `triggerPipeline()`
+- Construct `/api/...` or `/endpoints/...` URLs directly
+- Import from Python modules or reference Python class names
+- Reference dataset UUIDs (reference endpoint UUIDs and model type names only)
+- Import `@forge_model`, `@action_endpoint`, or any symbol from `forge.model` or `forge.control`
 
 ---
 
@@ -507,22 +515,22 @@ The View layer must **never**:
 // From @forge-suite/ts
 
 interface ForgeObjectSet<T> {
-  rows: T[];
-  schema: ForgeSchema;
+  rows:      T[];
+  schema:    ForgeSchema;
   datasetId: string;
-  mode: "snapshot" | "stream";
-  total: number;
+  mode:      "snapshot" | "stream";
+  total:     number;
 }
 
 interface ForgeSchema {
-  fields: Record<string, FieldDefinition>;
+  fields:      Record<string, FieldDefinition>;
   primary_key?: string;
 }
 
 interface FieldDefinition {
-  type: "string" | "integer" | "float" | "boolean" | "datetime";
-  nullable: boolean;
-  display?: string;
+  type:          "string" | "integer" | "float" | "boolean" | "datetime";
+  nullable:      boolean;
+  display?:      string;
   display_hint?: string;
 }
 
@@ -535,14 +543,14 @@ interface StateBinding {
 }
 
 interface InteractionConfig {
-  mode?: "single" | "multi";
-  onClick?: ForgeAction;
+  mode?:        "single" | "multi";
+  onClick?:     ForgeAction;
   contextMenu?: Array<{ label: string; action: ForgeAction }>;
 }
 
 interface ComputedColumnConfig {
   endpointId: string;
-  columns: string[];
-  params?: Record<string, unknown | StateBinding>;
+  columns:    string[];
+  params?:    Record<string, unknown | StateBinding>;
 }
 ```

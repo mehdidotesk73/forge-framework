@@ -183,12 +183,11 @@ Full developer documentation lives in `docs/`:
 
 | File | Contents |
 |------|----------|
-| `docs/forge-overview.md` | Architecture, storage, build sequence |
-| `docs/pipeline-layer.md` | `@pipeline` decorator, scheduling, run history |
-| `docs/model-layer.md` | `@forge_model`, field defs, snapshot vs. stream |
-| `docs/control-layer.md` | `@action_endpoint`, business logic patterns |
-| `docs/view-layer.md` | React widgets, generated TS SDK |
-| `docs/new-project-guide.md` | End-to-end guide for building a new Forge project |
-| `docs/forge-suite-cli.md` | Full lifecycle via Forge Suite CLI |
-| `docs/forge-suite-webapp.md` | Full lifecycle via Forge Suite webapp UI |
-| `docs/forge-suite-integration.md` | Registering projects with Forge Suite |
+| `docs/01-project-getting-started.md` | Install, init, and build your first Forge project |
+| `docs/02-project-widget-reference.md` | All widgets with copy-paste examples |
+| `docs/10-layer-pipeline.md` | `@pipeline` decorator, scheduling, run history, DuckDB |
+| `docs/11-layer-model.md` | `@forge_model`, field defs, snapshot vs. stream, CRUD |
+| `docs/12-layer-control.md` | `@action_endpoint`, `@computed_attribute_endpoint`, UoW |
+| `docs/13-layer-view.md` | React widgets, generated TS SDK, state bindings |
+| `docs/20-suite-developer-guide.md` | Forge Suite architecture, dev workflows, CLI reference, publishing |
+| `docs/21-suite-todo.md` | Open items by layer |
