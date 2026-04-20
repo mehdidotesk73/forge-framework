@@ -326,32 +326,8 @@ CURRENT_PHASE=2
 if [ "$FROM_PHASE" -le 2 ]; then
   log_header 2 "Bump version files  ($PY_VER → $NEW_VERSION)"
 
-  log_step "Updating all four version files..."
-  "$PYTHON" - "$NEW_VERSION" "$REPO_ROOT" <<'PYEOF'
-import re, json, sys
-v, root = sys.argv[1], sys.argv[2]
-
-def patch_file(path, fn):
-    text = open(path).read()
-    open(path, "w").write(fn(text))
-    print(f"     updated: {path}")
-
-patch_file(f"{root}/packages/forge-py/forge/version.py", lambda t:
-    re.sub(r'__version__ = "[^"]+"', f'__version__ = "{v}"',
-    re.sub(r'TS_VERSION = "[^"]+"',  f'TS_VERSION = "{v}"', t)))
-
-patch_file(f"{root}/packages/forge-py/pyproject.toml", lambda t:
-    re.sub(r'^version = "[^"]+"', f'version = "{v}"', t, flags=re.M))
-
-path = f"{root}/packages/forge-ts/package.json"
-data = json.load(open(path))
-data["version"] = v
-open(path, "w").write(json.dumps(data, indent=2) + "\n")
-print(f"     updated: {path}")
-
-patch_file(f"{root}/packages/forge-suite/pyproject.toml", lambda t:
-    re.sub(r'^version = "[^"]+"', f'version = "{v}"', t, flags=re.M))
-PYEOF
+  log_step "Updating all four version files via bump_version.py..."
+  run_cmd "'$PYTHON' '$REPO_ROOT/bump_version.py' '$NEW_VERSION'"
 
   log_ok "Version files updated to v$NEW_VERSION"
 
@@ -495,6 +471,42 @@ if [ "$FROM_PHASE" -le 6 ]; then
       log_step "Uploading $pkg@$NEW_VERSION to PyPI..."
       run_cmd "'$TWINE' upload '$PKG_DIR/dist/'*"
       log_ok "$(basename "$WHEEL") uploaded to PyPI"
+
+      # Map package dir name → PyPI project name
+      case "$pkg" in
+        forge-py)    PYPI_NAME="forge-framework" ;;
+        forge-suite) PYPI_NAME="forge-suite" ;;
+        *)           PYPI_NAME="$pkg" ;;
+      esac
+
+      # Poll PyPI JSON API until the new version appears (max ~5 min)
+      log_step "Waiting for $PYPI_NAME@$NEW_VERSION to be indexed on PyPI..."
+      POLL_OK=false
+      for attempt in $(seq 1 30); do
+        FOUND=$("$PYTHON" - "$PYPI_NAME" "$NEW_VERSION" <<'PYEOF'
+import urllib.request, json, sys
+name, ver = sys.argv[1], sys.argv[2]
+try:
+    data = json.loads(urllib.request.urlopen(f"https://pypi.org/pypi/{name}/json", timeout=10).read())
+    print("yes" if ver in data.get("releases", {}) else "no")
+except Exception as e:
+    print(f"err:{e}")
+PYEOF
+)
+        if [[ "$FOUND" == "yes" ]]; then
+          POLL_OK=true
+          log_ok "$PYPI_NAME@$NEW_VERSION confirmed on PyPI (attempt $attempt)"
+          break
+        elif [[ "$FOUND" == "no" ]]; then
+          log_info "     attempt $attempt/30 — not yet indexed, waiting 10 s..."
+        else
+          log_warn "     attempt $attempt/30 — poll error: $FOUND, retrying..."
+        fi
+        sleep 10
+      done
+      if ! $POLL_OK; then
+        die "$PYPI_NAME@$NEW_VERSION did not appear on PyPI within 5 minutes. Check https://pypi.org/project/$PYPI_NAME/ manually before continuing."
+      fi
     fi
   done
 
