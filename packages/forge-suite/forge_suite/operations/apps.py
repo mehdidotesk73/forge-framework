@@ -130,7 +130,7 @@ def run_app(project_id: str, app_name: str) -> dict:
 
     if not (app_dir / "node_modules").exists():
         result = subprocess.run(
-            [npm, "install"], cwd=str(app_dir), capture_output=True, text=True, timeout=120
+            [npm, "install"], cwd=str(app_dir), capture_output=True, text=True, timeout=300
         )
         if result.returncode != 0:
             return {"error": f"npm install failed: {result.stderr[:500]}"}

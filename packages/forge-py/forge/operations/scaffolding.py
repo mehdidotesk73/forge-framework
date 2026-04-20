@@ -450,38 +450,41 @@ import react from "@vitejs/plugin-react";
 import {{ readFileSync, existsSync }} from "fs";
 import {{ resolve }} from "path";
 
-function forgeTsSrc(): string {{
-  // 1. Read FORGE_SUITE_ROOT from ~/.forge/env
-  const envFile = resolve(process.env.HOME || "~", ".forge", "env");
-  if (existsSync(envFile)) {{
-    const line = readFileSync(envFile, "utf8")
-      .split("\\n")
-      .find((l) => l.startsWith("FORGE_SUITE_ROOT="));
-    if (line) {{
-      const suiteRoot = line.split("=")[1].trim();
-      return resolve(suiteRoot, "forge-framework", "packages", "forge-ts", "src", "index.ts");
+function forgeTsSrc(): string | null {{
+  const homeDir = process.env.HOME || process.env.USERPROFILE;
+  if (homeDir) {{
+    const envFile = resolve(homeDir, ".forge", "env");
+    if (existsSync(envFile)) {{
+      const line = readFileSync(envFile, "utf8")
+        .split("\\n")
+        .find((l) => l.startsWith("FORGE_SUITE_ROOT="));
+      if (line) {{
+        const suiteRoot = line.split("=")[1].trim();
+        return resolve(suiteRoot, "forge-framework", "packages", "forge-ts", "src", "index.ts");
+      }}
     }}
   }}
-  // 2. Read from .forge/suite_root written at project mount time
   const suiteRootFile = resolve(__dirname, ".forge", "suite_root");
   if (existsSync(suiteRootFile)) {{
     const suiteRoot = readFileSync(suiteRootFile, "utf8").trim();
     return resolve(suiteRoot, "forge-framework", "packages", "forge-ts", "src", "index.ts");
   }}
-  throw new Error(
-    "FORGE_SUITE_ROOT not found. Run setup.command or mount this project in forge-suite."
-  );
+  return null;
 }}
+
+const forgeTsSrcPath = forgeTsSrc();
 
 export default defineConfig({{
   plugins: [react()],
-  resolve: {{
-    alias: {{
-      "@forge-suite/ts/forge.css": forgeTsSrc().replace("index.ts", "forge.css"),
-      "@forge-suite/ts/runtime": forgeTsSrc().replace("index.ts", "runtime/index.ts"),
-      "@forge-suite/ts": forgeTsSrc(),
+  ...(forgeTsSrcPath ? {{
+    resolve: {{
+      alias: {{
+        "@forge-suite/ts/forge.css": forgeTsSrcPath.replace("index.ts", "forge.css"),
+        "@forge-suite/ts/runtime": forgeTsSrcPath.replace("index.ts", "runtime/index.ts"),
+        "@forge-suite/ts": forgeTsSrcPath,
+      }},
     }},
-  }},
+  }} : {{}}),
   server: {{
     proxy: {{
       "/api": `http://localhost:${{process.env.VITE_API_PORT || "8000"}}`,

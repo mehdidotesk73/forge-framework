@@ -171,34 +171,13 @@ export function AppsPage() {
                   <div
                     style={{
                       color: "var(--accent-green)",
-                      marginBottom: 8,
+                      marginBottom: 12,
                       fontSize: 13,
                     }}
                   >
-                    App <strong>{newResult.name}</strong> scaffolded on port{" "}
-                    <strong>{newResult.port}</strong>.
+                    App <strong>{newResult.name}</strong> scaffolded successfully.
+                    Use the <strong>Run</strong> button to install dependencies and start the dev server.
                   </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-muted)",
-                      marginBottom: 4,
-                    }}
-                  >
-                    To start the dev server:
-                  </div>
-                  <code
-                    style={{
-                      fontSize: 12,
-                      background: "var(--bg-hover)",
-                      padding: "4px 8px",
-                      borderRadius: 4,
-                      display: "block",
-                      marginBottom: 12,
-                    }}
-                  >
-                    cd "{newResult.path}" && npm install && npm run dev
-                  </code>
                   <ButtonGroup
                     size='sm'
                     buttons={[
