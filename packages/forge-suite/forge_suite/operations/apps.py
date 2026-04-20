@@ -63,8 +63,12 @@ def _ensure_api_running(root: Path) -> int:
     if api_port and api_pid and _is_pid_alive(api_pid):
         return api_port
 
+    import sys as _sys
     api_port = _find_free_port()
-    forge_bin = str(root / ".venv" / "bin" / "forge")
+    if _sys.platform == "win32":
+        forge_bin = str(root / ".venv" / "Scripts" / "forge.exe")
+    else:
+        forge_bin = str(root / ".venv" / "bin" / "forge")
     if not _Path_exists(forge_bin):
         forge_bin = shutil.which("forge") or "forge"
     with open(root / ".forge-api.log", "w") as api_log:
@@ -185,9 +189,39 @@ def ping_app(project_id: str, app_name: str) -> dict:
         return {"live": False, "port": port}
 
 
-def stop_app(project_id: str, app_name: str) -> dict:
+def _kill_pid(pid: int) -> None:
+    import os
+    import sys
     import subprocess
+    try:
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+        else:
+            os.kill(pid, 15)
+    except Exception:
+        pass
 
+
+def _kill_port(port: int) -> None:
+    import sys
+    import subprocess
+    if sys.platform == "win32":
+        result = subprocess.run(
+            ["netstat", "-ano", "-p", "TCP"],
+            capture_output=True, text=True,
+        )
+        for line in result.stdout.splitlines():
+            if f":{port} " in line and "LISTENING" in line:
+                parts = line.split()
+                pid = parts[-1]
+                subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+    else:
+        result = subprocess.run(["lsof", "-ti", f"tcp:{port}"], capture_output=True, text=True)
+        for pid in result.stdout.strip().splitlines():
+            subprocess.run(["kill", pid.strip()], capture_output=True)
+
+
+def stop_app(project_id: str, app_name: str) -> dict:
     proj = _get_project(project_id)
     if proj is None:
         return {"error": f"Project {project_id} not found"}
@@ -201,24 +235,20 @@ def stop_app(project_id: str, app_name: str) -> dict:
 
     killed = []
 
-    # Kill frontend process and any stray process on its port
     frontend_pid = app_state.get("pid")
     frontend_port = app_state.get("port")
     if frontend_pid:
-        subprocess.run(["kill", str(frontend_pid)], capture_output=True)
+        _kill_pid(int(frontend_pid))
         killed.append(frontend_pid)
     if frontend_port:
-        result = subprocess.run(["lsof", "-ti", f"tcp:{frontend_port}"], capture_output=True, text=True)
-        for pid in result.stdout.strip().splitlines():
-            subprocess.run(["kill", pid.strip()], capture_output=True)
+        _kill_port(int(frontend_port))
 
     del run_ports["apps"][app_name]
 
-    # Kill API only when no other apps from this project are still running
     if not run_ports["apps"]:
         api_pid = run_ports.get("api_pid")
         if api_pid:
-            subprocess.run(["kill", str(api_pid)], capture_output=True)
+            _kill_pid(int(api_pid))
             killed.append(api_pid)
         run_ports.pop("api_port", None)
         run_ports.pop("api_pid", None)
@@ -230,6 +260,7 @@ def stop_app(project_id: str, app_name: str) -> dict:
 def open_app(project_id: str, app_name: str) -> dict:
     import subprocess
     import shutil
+    import sys
 
     proj = _get_project(project_id)
     if proj is None:
@@ -242,7 +273,10 @@ def open_app(project_id: str, app_name: str) -> dict:
         return {"error": f"App '{app_name}' is not running"}
 
     url = f"http://localhost:{port}"
-    opener = shutil.which("open") or shutil.which("xdg-open")
-    if opener:
-        subprocess.Popen([opener, url])
+    if sys.platform == "win32":
+        subprocess.Popen(["cmd", "/c", "start", "", url], shell=False)
+    else:
+        opener = shutil.which("open") or shutil.which("xdg-open")
+        if opener:
+            subprocess.Popen([opener, url])
     return {"ok": True, "url": url}
