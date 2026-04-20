@@ -117,17 +117,21 @@ A pipeline is a Python function decorated with `@pipeline` — it receives typed
 ```python
 # pipelines/ingest_prices.py
 import pandas as pd
-from forge.pipeline import pipeline
-from forge.pipeline.runner import ForgeInput, ForgeOutput
+from forge.pipeline import pipeline, ForgeInput, ForgeOutput
+
+PIPELINE_ID = "YOUR-PIPELINE-UUID"
+SOURCE_ID   = "a1b2c3d4-YOUR-SOURCE-UUID"
+OUTPUT_ID   = "e5f6a7b8-YOUR-OUTPUT-UUID"
 
 @pipeline(
-    inputs={"source": ForgeInput("a1b2c3d4-YOUR-SOURCE-UUID")},
-    outputs={"prices": ForgeOutput("e5f6a7b8-YOUR-OUTPUT-UUID")},
+    pipeline_id=PIPELINE_ID,
+    inputs={"source": ForgeInput(SOURCE_ID)},
+    outputs={"prices": ForgeOutput(OUTPUT_ID)},
 )
-def run(source, prices):
-    df = source.df()
+def run(inputs, outputs):
+    df = inputs.source.df()
     df["price_usd"] = df["close"].round(2)
-    prices.write(df[["date", "symbol", "price_usd"]])
+    outputs.prices.write(df[["date", "symbol", "price_usd"]])
 ```
 
 **Ingestion pipeline — fetch from the internet:**
@@ -136,15 +140,18 @@ def run(source, prices):
 # pipelines/fetch_prices.py
 import pandas as pd
 import requests
-from forge.pipeline import pipeline
-from forge.pipeline.runner import ForgeOutput
+from forge.pipeline import pipeline, ForgeOutput
+
+PIPELINE_ID = "YOUR-PIPELINE-UUID"
+OUTPUT_ID   = "e5f6a7b8-YOUR-OUTPUT-UUID"
 
 @pipeline(
-    outputs={"prices": ForgeOutput("e5f6a7b8-YOUR-OUTPUT-UUID")},
+    pipeline_id=PIPELINE_ID,
+    outputs={"prices": ForgeOutput(OUTPUT_ID)},
 )
-def run(prices):
+def run(inputs, outputs):
     data = requests.get("https://api.example.com/prices").json()
-    prices.write(pd.DataFrame(data))
+    outputs.prices.write(pd.DataFrame(data))
 ```
 
 Register the pipeline and its output dataset in `forge.toml`:
@@ -155,6 +162,7 @@ id = "e5f6a7b8-..."
 name = "prices"
 
 [[pipelines]]
+id           = "YOUR-PIPELINE-UUID"
 display_name = "ingest_prices"
 module       = "pipelines.ingest_prices"
 function     = "run"
@@ -172,6 +180,7 @@ forge pipeline history ingest_prices
 
 ```toml
 [[pipelines]]
+id           = "YOUR-PIPELINE-UUID"
 display_name = "price_pipeline"
 module       = "pipelines.price_pipeline"
 function     = "run"

@@ -11,10 +11,12 @@ from forge.pipeline import pipeline, ForgeOutput
 import hashlib
 import yfinance as yf
 
+PIPELINE_ID       = "cccccccc-0000-0000-0000-000000000001"
 OUTPUT_DATASET_ID = "f0e4b4e0-607a-4c2a-8b2b-fe0af3aae278"
 
 
 @pipeline(
+    pipeline_id=PIPELINE_ID,
     inputs={},
     outputs={"result": ForgeOutput(OUTPUT_DATASET_ID)},
 )

@@ -21,6 +21,7 @@ class PipelineDefinition:
     func: Callable
     inputs: dict[str, ForgeInput]
     outputs: dict[str, ForgeOutput]
+    pipeline_id: str | None = None
     schedule: str | None = None
     module: str = ""
 
@@ -34,6 +35,7 @@ def pipeline(
     outputs: dict[str, ForgeOutput],
     schedule: str | None = None,
     name: str | None = None,
+    pipeline_id: str | None = None,
 ) -> Callable:
     """Decorator that registers a function as a Forge pipeline."""
 
@@ -44,6 +46,7 @@ def pipeline(
             func=func,
             inputs=inputs,
             outputs=outputs,
+            pipeline_id=pipeline_id,
             schedule=schedule,
             module=func.__module__,
         )

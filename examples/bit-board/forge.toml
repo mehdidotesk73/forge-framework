@@ -3,6 +3,7 @@ name = "bit-board"
 forge_version = "0.1.0"
 
 [[pipelines]]
+id = "cccccccc-0000-0000-0000-000000000001"
 display_name = "bitcoin_price_ingestion"
 module = "pipelines.bitcoin_price_ingestion"
 function = "run"

@@ -225,6 +225,7 @@ def sync_from_toml_raw(root: Path, cfg: dict | None = None) -> dict:
             continue
         input_ids, output_ids = try_load_pipeline_io(root, module, func)
         pipelines.append({
+            "id": p.get("id", ""),
             "name": p.get("display_name") or p.get("name", ""),
             "module": module,
             "function": func,

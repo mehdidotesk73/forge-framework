@@ -19,11 +19,13 @@ Pipeline Layer — {name}
 """
 from forge.pipeline import pipeline, ForgeInput, ForgeOutput
 
+PIPELINE_ID       = "{pipeline_id}"
 INPUT_DATASET_ID  = "{input_uuid}"
 OUTPUT_DATASET_ID = "{output_uuid}"
 
 
 @pipeline(
+    pipeline_id=PIPELINE_ID,
     inputs={{
         "source": ForgeInput(INPUT_DATASET_ID),
     }},
@@ -53,17 +55,19 @@ def create_pipeline(root: Path, pipeline_name: str) -> dict:
     if pipeline_file.exists():
         return {"error": f"pipelines/{name}.py already exists"}
 
+    pipeline_id = str(uuid.uuid4())
     pipeline_file.write_text(_PIPELINE_TEMPLATE.format(
         name=name,
+        pipeline_id=pipeline_id,
         input_uuid=str(uuid.uuid4()),
         output_uuid=str(uuid.uuid4()),
     ))
 
-    _patch_toml_pipelines(root, name)
+    _patch_toml_pipelines(root, name, pipeline_id)
     return {"file": str(pipeline_file), "name": name}
 
 
-def _patch_toml_pipelines(root: Path, name: str) -> None:
+def _patch_toml_pipelines(root: Path, name: str, pipeline_id: str) -> None:
     toml_path = root / "forge.toml"
     if not toml_path.exists():
         return
@@ -72,7 +76,7 @@ def _patch_toml_pipelines(root: Path, name: str) -> None:
         return
     toml_path.write_text(
         toml_path.read_text()
-        + f'\n[[pipelines]]\ndisplay_name = "{name}"\nmodule = "pipelines.{name}"\nfunction = "run"\n'
+        + f'\n[[pipelines]]\nid = "{pipeline_id}"\ndisplay_name = "{name}"\nmodule = "pipelines.{name}"\nfunction = "run"\n'
     )
 
 

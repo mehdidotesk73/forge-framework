@@ -20,7 +20,7 @@ class DatasetConfig(BaseModel):
 
 
 class PipelineConfig(BaseModel):
-    id: str = Field(default_factory=lambda: str(__import__("uuid").uuid4()))
+    id: str
     display_name: str
     module: str
     function: str = "run"
@@ -92,9 +92,12 @@ class ProjectConfig(BaseModel):
 # ── normalizers: accept both old and new field names ────────────────────────
 
 def _normalize_pipeline(p: dict) -> dict:
+    import uuid as _uuid
     out = dict(p)
     if "display_name" not in out and "name" in out:
         out["display_name"] = out.pop("name")
+    if "id" not in out or not out["id"]:
+        out["id"] = str(_uuid.uuid4())
     return out
 
 

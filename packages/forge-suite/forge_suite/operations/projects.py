@@ -31,9 +31,9 @@ def sync_project_records(project_id: str, root: Path, cfg: dict) -> None:
     data = sync_from_toml_raw(root, cfg)
 
     for pl in data["pipelines"]:
-        pid_hash = hashlib.md5(pl["name"].encode()).hexdigest()[:10]
+        pl_id = pl.get("id") or hashlib.md5(pl["name"].encode()).hexdigest()[:10]
         Pipeline.create(
-            id=f"pl-{project_id[:8]}-{pid_hash}",
+            id=f"pl-{project_id[:8]}-{pl_id[:10]}",
             project_id=project_id,
             name=pl["name"],
             module=pl["module"],

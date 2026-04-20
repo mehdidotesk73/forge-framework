@@ -18,6 +18,7 @@ import pandas as pd
 
 from forge.pipeline import pipeline, ForgeInput, ForgeOutput
 
+PIPELINE_ID       = "bbbbbbbb-0000-0000-0000-000000000001"
 PRICES_DATASET_ID = "9dac026d-5f47-43c3-a216-6235be88f9dd"
 
 SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA"]
@@ -25,6 +26,7 @@ PERIOD = "1y"
 
 
 @pipeline(
+    pipeline_id=PIPELINE_ID,
     inputs={},
     outputs={
         "prices": ForgeOutput(PRICES_DATASET_ID),

@@ -4,7 +4,7 @@
 
 The Pipeline layer is responsible for **acquiring, transforming, and writing datasets**. It is the lowest layer in the Forge stack: it has zero knowledge of model classes, endpoints, or UI widgets. Its only outputs are dataset UUIDs (Parquet files written through the StorageEngine).
 
-A pipeline is a pure data-processing function decorated with `@forge_pipeline`. It receives typed input and output handles, reads data, transforms it, and writes results back.
+A pipeline is a pure data-processing function decorated with `@pipeline`. It receives typed input and output handles, reads data, transforms it, and writes results back.
 
 ---
 
@@ -44,29 +44,28 @@ Every `write()` creates a new versioned Parquet file (`<uuid>_v<n>.parquet`). Pr
 ```python
 # pipelines/normalize.py
 import pandas as pd
-from forge.pipeline import forge_pipeline
+from forge.pipeline import pipeline, ForgeInput, ForgeOutput
 
-@forge_pipeline(
-    name="normalize_students",
-    pipeline_id="bbbbbbbb-0000-0000-0000-000000000001",
-    inputs=[
-        {"name": "raw",       "dataset": "aaaaaaaa-0000-0000-0000-000000000001"},
-    ],
-    outputs=[
-        {"name": "students",  "dataset": "cccccccc-0000-0000-0000-000000000001"},
-    ],
+PIPELINE_ID  = "bbbbbbbb-0000-0000-0000-000000000001"
+RAW_ID       = "aaaaaaaa-0000-0000-0000-000000000001"
+STUDENTS_ID  = "cccccccc-0000-0000-0000-000000000001"
+
+@pipeline(
+    pipeline_id=PIPELINE_ID,
+    inputs={"raw":      ForgeInput(RAW_ID)},
+    outputs={"students": ForgeOutput(STUDENTS_ID)},
 )
-def run(raw, students):
-    df = raw.df()
+def run(inputs, outputs):
+    df = inputs.raw.df()
 
-    df["name"]  = df["name"].str.strip()
-    df["email"] = df["email"].str.lower()
+    df["name"]   = df["name"].str.strip()
+    df["email"]  = df["email"].str.lower()
     df["status"] = df["status"].fillna("active")
 
-    students.write(df)
+    outputs.students.write(df)
 ```
 
-The positional argument names (`raw`, `students`) must match the `"name"` keys in `inputs` and `outputs` respectively, **in declaration order**.
+Input and output handles are accessed via `inputs.<key>` and `outputs.<key>`, where the key matches the dict key passed to `ForgeInput`/`ForgeOutput` in the decorator.
 
 ### 2. Register in forge.toml
 
@@ -90,7 +89,7 @@ forge pipeline run normalize_students
 
 ## Dataset UUIDs
 
-Dataset UUIDs are assigned once at `forge dataset load` time and never change. Reference them by UUID in the `@forge_pipeline` decorator:
+Dataset UUIDs are assigned once at `forge dataset load` time and never change. Reference them by UUID in the `@pipeline` decorator:
 
 ```bash
 forge dataset load data/raw_students.csv --name raw_students
@@ -109,27 +108,32 @@ Never hard-code file paths in pipeline code. Always use the UUID-backed handles.
 A pipeline can declare any number of inputs and outputs:
 
 ```python
-@forge_pipeline(
-    name="enrich_students",
-    pipeline_id="...",
-    inputs=[
-        {"name": "students", "dataset": "aaaa..."},
-        {"name": "courses",  "dataset": "bbbb..."},
-    ],
-    outputs=[
-        {"name": "enrollments", "dataset": "cccc..."},
-        {"name": "summary",     "dataset": "dddd..."},
-    ],
+PIPELINE_ID    = "..."
+STUDENTS_ID    = "aaaa..."
+COURSES_ID     = "bbbb..."
+ENROLLMENTS_ID = "cccc..."
+SUMMARY_ID     = "dddd..."
+
+@pipeline(
+    pipeline_id=PIPELINE_ID,
+    inputs={
+        "students": ForgeInput(STUDENTS_ID),
+        "courses":  ForgeInput(COURSES_ID),
+    },
+    outputs={
+        "enrollments": ForgeOutput(ENROLLMENTS_ID),
+        "summary":     ForgeOutput(SUMMARY_ID),
+    },
 )
-def run(students, courses, enrollments, summary):
-    sdf = students.df()
-    cdf = courses.df()
+def run(inputs, outputs):
+    sdf = inputs.students.df()
+    cdf = inputs.courses.df()
 
     merged = sdf.merge(cdf, on="course_id")
-    enrollments.write(merged)
+    outputs.enrollments.write(merged)
 
     agg = merged.groupby("department")["credits"].sum().reset_index()
-    summary.write(agg)
+    outputs.summary.write(agg)
 ```
 
 ---
@@ -139,8 +143,8 @@ def run(students, courses, enrollments, summary):
 For large datasets or SQL-friendly transformations, use `relation()` instead of `df()`:
 
 ```python
-def run(transactions, daily_totals):
-    rel = transactions.relation()
+def run(inputs, outputs):
+    rel = inputs.transactions.relation()
 
     result = rel.query(
         "transactions",
@@ -155,7 +159,7 @@ def run(transactions, daily_totals):
         """
     )
 
-    daily_totals.write(result)  # DuckDB Relation is accepted directly
+    outputs.daily_totals.write(result)  # DuckDB Relation is accepted directly
 ```
 
 `handle.relation()` returns a live DuckDB `Relation` object. You can chain DuckDB's Python API (`.filter()`, `.aggregate()`, `.join()`, `.query()`) or use `.df()` on it to materialize.
@@ -229,7 +233,7 @@ Wrap external calls (HTTP fetches, DB queries) in try/except inside your pipelin
 The Pipeline layer must **never**:
 
 - Import `@forge_model`-decorated classes
-- Import `@action_endpoint` or `@computed_attribute_endpoint` decorators
+- Import `@action_endpoint`, `@computed_attribute_endpoint`, or `@streaming_endpoint` decorators
 - Import anything from `forge.control` or `packages/forge-ts`
 - Construct HTTP requests or call external APIs (unless fetching raw source data)
 - Reference widget types or UI concerns
@@ -243,20 +247,20 @@ If you find yourself needing model class methods inside a pipeline, stop and rec
 ```python
 # pipelines/normalize_prices.py
 import pandas as pd
-from forge.pipeline import forge_pipeline
+from forge.pipeline import pipeline, ForgeInput, ForgeOutput
 
+PIPELINE_ID = "33333333-0000-0000-0000-000000000001"
 RAW_ID      = "11111111-0000-0000-0000-000000000001"
 PRICES_ID   = "22222222-0000-0000-0000-000000000001"
 
-@forge_pipeline(
-    name="normalize_prices",
-    pipeline_id="33333333-0000-0000-0000-000000000001",
-    inputs=[{"name": "raw", "dataset": RAW_ID}],
-    outputs=[{"name": "prices", "dataset": PRICES_ID}],
+@pipeline(
+    pipeline_id=PIPELINE_ID,
+    inputs={"raw":    ForgeInput(RAW_ID)},
+    outputs={"prices": ForgeOutput(PRICES_ID)},
     schedule="*/15 * * * *",  # every 15 minutes
 )
-def run(raw, prices):
-    df = raw.df()
+def run(inputs, outputs):
+    df = inputs.raw.df()
 
     df = df.rename(columns={"Close": "close", "Volume": "volume", "Date": "ts"})
     df["ts"]     = pd.to_datetime(df["ts"])
@@ -265,15 +269,15 @@ def run(raw, prices):
     df           = df.dropna(subset=["close"])
     df           = df.sort_values("ts").reset_index(drop=True)
 
-    prices.write(df)
+    outputs.prices.write(df)
 ```
 
 ```toml
 # forge.toml snippet
 [[pipelines]]
-id       = "33333333-0000-0000-0000-000000000001"
-name     = "normalize_prices"
-module   = "pipelines.normalize_prices"
-function = "run"
-schedule = "*/15 * * * *"
+id           = "33333333-0000-0000-0000-000000000001"
+display_name = "normalize_prices"
+module       = "pipelines.normalize_prices"
+function     = "run"
+schedule     = "*/15 * * * *"
 ```
