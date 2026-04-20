@@ -56,8 +56,6 @@ All release and distribution work (Track 1, 2, 3 — items 1–13) is complete. 
 
 - [ ] `[HIGH]` **Param validation at call time** — params are declared but minimal runtime validation occurs. Add type coercion and required-field checks before calling the endpoint function, returning a structured 422 error on failure.
 
-- [ ] `[MED]` **Streaming endpoint support** — allow an endpoint to return a generator / async generator for long-running operations, streamed as SSE or NDJSON to the client.
-
 - [ ] `[MED]` **Endpoint-level rate limiting** — declare `rate_limit` in the `@action_endpoint` decorator (e.g. `"10/minute"`). Enforced at the FastAPI route level.
 
 - [ ] `[MED]` **Background task endpoints** — an endpoint variant that enqueues work and returns a job ID immediately, with a status polling endpoint (`GET /api/jobs/{id}`).
@@ -70,7 +68,7 @@ All release and distribution work (Track 1, 2, 3 — items 1–13) is complete. 
 
 ## View Layer
 
-- [ ] `[HIGH]` **Pagination support in ObjectTable** — the widget currently renders whatever rows are in the `objectSet`. Add built-in pagination controls that call `load<Name>Set({ limit, offset })` automatically based on `objectSet.total`.
+- [ ] `[HIGH]` **Pagination support in ObjectTable** — the widget currently renders whatever rows are in the `objectSet`. Add built-in pagination controls that call `fetchObjectSet({ limit, offset })` and re-wrap via `load<Name>Set(rows)` automatically based on `objectSet.total`.
 
 - [ ] `[MED]` **Column visibility controls** — allow users to show/hide columns in `ObjectTable` via a column picker UI component.
 

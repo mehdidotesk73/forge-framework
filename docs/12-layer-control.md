@@ -6,10 +6,11 @@ The Control layer exposes **business logic as callable HTTP endpoints**. It is t
 
 Control code imports model classes, creates and mutates records, performs computations, and returns results. It never imports widget code or writes UI logic.
 
-There are two kinds of endpoints:
+There are three kinds of endpoints:
 
 - **Action endpoints** — discrete operations triggered by forms or buttons: create, update, delete, custom business logic
 - **Computed column endpoints** — batch computations over a set of objects, producing per-row derived values displayed in a table
+- **Streaming endpoints** — long-running operations that emit incremental output via Server-Sent Events (SSE)
 
 ---
 
@@ -80,7 +81,7 @@ def create_student(name: str, email: str, major: str, status: str = "active") ->
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `name` | str | yes | Identifier; also shown in the auto-rendered Form widget |
+| `name` | str | no | Identifier shown in the auto-rendered Form widget; defaults to the function name |
 | `endpoint_id` | str (UUID) | yes | Stable UUID; **never change this after first deployment** |
 | `description` | str | yes | Shown in Form UI and OpenAPI docs |
 | `params` | list[dict] | yes | Ordered parameter list |
@@ -200,6 +201,51 @@ In your React app, pass `computedColumns` to `ObjectTable`:
 ```
 
 `ObjectTable` calls the endpoint automatically with the visible rows' primary keys plus any resolved params. When `selectedTimeframe` changes, the columns re-fetch.
+
+---
+
+## Streaming Endpoints
+
+Streaming endpoints handle long-running operations (builds, pipeline runs, batch jobs) that emit incremental output to the caller via Server-Sent Events (SSE).
+
+### Syntax
+
+```python
+from forge.control import streaming_endpoint
+
+@streaming_endpoint(
+    endpoint_id="33333333-0000-0000-0000-000000000001",
+    description="Build all models and stream log output.",
+    params=[]
+)
+def build_models(emit):
+    emit("Starting model build...\n")
+    # ... do work ...
+    emit("Done.\n")
+```
+
+The function receives an `emit` callable. Call `emit(text)` to send a chunk to the client. When the function returns, the stream closes.
+
+**`@streaming_endpoint` parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | str | no | Identifier; defaults to the function name |
+| `endpoint_id` | str (UUID) | yes | Stable UUID; **never change this after first deployment** |
+| `description` | str | yes | Shown in the Forge Suite endpoint panel |
+| `params` | list[dict] | yes | Ordered parameter list (same format as action endpoints) |
+
+### Calling from the view layer
+
+```typescript
+import { callStreamingEndpoint } from "@forge-suite/ts";
+
+callStreamingEndpoint(
+  BUILD_MODELS_ID,
+  {},                                      // params
+  (chunk) => setLog((prev) => prev + chunk) // onChunk callback
+);
+```
 
 ---
 

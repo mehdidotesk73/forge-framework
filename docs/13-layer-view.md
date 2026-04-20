@@ -8,7 +8,7 @@ The view layer has no knowledge of pipelines, model internals, or Python. It rec
 
 **Three things the view layer does:**
 
-1. **Load data** — call the generated `load<Name>Set()` function; receive a typed `ForgeObjectSet<T>`
+1. **Load data** — fetch rows with `fetchObjectSet()`, then wrap into a typed `ForgeObjectSet<T>` via `load<Name>Set(rows)`
 2. **Display data** — pass the object set to widgets (`ObjectTable`, `Chart`, `MetricTile`, etc.)
 3. **Mutate data** — invoke endpoints via `callEndpoint()` or `<Form>` widget; refresh on success
 
@@ -40,28 +40,53 @@ configureForge({ baseUrl: "https://my-server.example.com" });
 
 ## Loading Data
 
-### Generated loader function
+Loading data requires two steps:
 
-`forge model build` generates a typed `load<Name>Set()` function for every model:
+1. **Fetch rows over HTTP** — use `fetchObjectSet<T>()` from `@forge-suite/ts`
+2. **Wrap into a typed set** — use the generated `load<Name>Set(rows)` function
+
+### Step 1 — `fetchObjectSet`
+
+```typescript
+import { fetchObjectSet } from "@forge-suite/ts";
+
+const { rows, total } = await fetchObjectSet<Student>("Student", { limit: 100, offset: 0 });
+// rows   → Student[]
+// total  → number (full row count, before pagination)
+```
+
+`fetchObjectSet` makes the HTTP GET request to `/api/objects/{type}`. It is the only approved way to fetch object rows — never write raw `fetch()` or `axios` calls for Forge data.
+
+### Step 2 — generated `load<Name>Set`
+
+`forge model build` generates a typed `load<Name>Set(rows)` function for every model. It is **synchronous** — it wraps already-fetched rows into a `ForgeObjectSet<T>`:
 
 ```typescript
 import { loadStudentSet } from "../.forge/generated/typescript/Student";
 
-const studentSet = await loadStudentSet({ limit: 100, offset: 0 });
+const studentSet = loadStudentSet(rows);
 // studentSet.rows    → Student[]
 // studentSet.schema  → ForgeSchema
 // studentSet.total   → number
 // studentSet.mode    → "snapshot" | "stream"
 ```
 
-Never write `fetch` calls for object data. The generated loader handles the HTTP call internally.
+### Complete pattern
+
+```typescript
+import { fetchObjectSet } from "@forge-suite/ts";
+import { loadStudentSet } from "../.forge/generated/typescript/Student";
+
+const { rows } = await fetchObjectSet<Student>("Student", { limit: 100, offset: 0 });
+const studentSet = loadStudentSet(rows);
+```
 
 ### Pagination
 
 ```typescript
-const page1 = await loadStudentSet({ limit: 50, offset: 0 });
-const page2 = await loadStudentSet({ limit: 50, offset: 50 });
-// studentSet.total gives the full row count
+const { rows: page1Rows, total } = await fetchObjectSet<Student>("Student", { limit: 50, offset: 0 });
+const { rows: page2Rows }        = await fetchObjectSet<Student>("Student", { limit: 50, offset: 50 });
+// total gives the full row count
 ```
 
 ---
@@ -501,7 +526,7 @@ When `timeframe` changes, `ObjectTable` detects the resolved value differs and r
 
 The View layer must **never**:
 
-- Write `fetch()`, `axios`, or any raw HTTP call for Forge data — use `load<Name>Set()`, `callEndpoint()`, `triggerPipeline()`
+- Write raw `fetch()` or `axios` calls for Forge data — use `fetchObjectSet()`, `load<Name>Set(rows)`, `callEndpoint()`, `triggerPipeline()`
 - Construct `/api/...` or `/endpoints/...` URLs directly
 - Import from Python modules or reference Python class names
 - Reference dataset UUIDs (reference endpoint UUIDs and model type names only)

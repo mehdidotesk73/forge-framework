@@ -59,9 +59,9 @@ This starts the Forge Suite management webapp at `http://localhost:5174`. Keep i
 ## Creating a New Project
 
 1. Open `http://localhost:5174` in your browser
-2. Click **New Project** in the sidebar
-3. Enter a project name (e.g. `my-app`)
-4. Click **Create**
+2. Click **+ Add project** in the sidebar
+3. Enter the path to your project directory
+4. Click **Create / Register**
 
 Forge Suite creates a scaffold directory and registers the project. Open it in VS Code:
 
@@ -126,9 +126,9 @@ The pipeline layer produces datasets. `initialize_calculation_dataset` writes an
 
 1. Select **forge-calculator** in the sidebar
 2. Click **Pipelines** in the sidebar
-3. Click **New Pipeline**
+3. Click **+ New Pipeline**
 4. Enter the name `initialize_calculation_dataset`
-5. Click **Create**
+5. Click **Create Pipeline**
 
 Forge Suite creates two things:
 
@@ -224,10 +224,10 @@ The model layer wraps the `calculations` dataset in a typed Python class and gen
 ### 2a — Create the model in the webapp
 
 1. Select **forge-calculator** in the sidebar
-2. Click **Models** in the sidebar
-3. Click **New Model**
+2. Click **Model** in the sidebar
+3. Click **+ New Model**
 4. Enter the name `Calculation`, select mode `snapshot`, and select the `calculations` backing dataset
-5. Click **Create**
+5. Click **Create Model**
 
 Forge Suite adds a `[[models]]` entry to `forge.toml` and generates the full model file from the dataset schema:
 
@@ -272,7 +272,7 @@ Switch to the Forge Suite webapp.
 
 **Sync** the project.
 
-**Build models** — click the **Build Models** button on the project card.
+**Build models** — click the **⚙ Build models** button on the project card.
 
 When the build completes:
 
@@ -282,7 +282,7 @@ When the build completes:
 
 **Verify:**
 
-1. In the sidebar, select **forge-calculator** and click **Models**
+1. In the sidebar, select **forge-calculator** and click **Model**
 2. Find the `Calculation` model, right-click, and select **Preview**
 3. The table should appear with all 6 fields. The table is empty for now — that's expected
 
@@ -301,7 +301,7 @@ The control layer exposes business logic as callable HTTP endpoints. Two endpoin
 
 1. Select **forge-calculator** in the sidebar
 2. Click **Endpoints** in the sidebar
-3. Click **New Endpoint**
+3. Click **+ New Endpoint**
 4. Enter `perform_calculation` as the endpoint name and `calculator_endpoints` as the repo name. Select **action** as the type.
 5. Click **Create Endpoint**
 
@@ -401,7 +401,7 @@ Switch to the Forge Suite webapp.
 
 **Sync** the project.
 
-**Build endpoints** — click the **Build Endpoints** button on the project card.
+**Build endpoints** — click the **⚙ Build endpoints** button on the project card.
 
 **Test `perform_calculation`:**
 
@@ -435,9 +435,9 @@ The view layer is a standard React + TypeScript app powered by Vite. It imports 
 
 1. Select **forge-calculator** in the sidebar
 2. Click **Apps** in the sidebar
-3. Click **New App**
+3. Click **+ New App**
 4. Enter the name `calculator`
-5. Click **Create**
+5. Click **Create App**
 
 `forge.toml` now contains:
 
