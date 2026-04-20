@@ -82,6 +82,25 @@ def _ensure_api_running(root: Path) -> int:
     run_ports["api_port"] = api_port
     run_ports["api_pid"] = api_proc.pid
     _save_run_ports(root, run_ports)
+
+    import socket
+    import time
+    deadline = time.time() + 15
+    while time.time() < deadline:
+        if api_proc.poll() is not None:
+            log_tail = ""
+            log_path = root / ".forge-api.log"
+            if log_path.exists():
+                log_tail = log_path.read_text(encoding="utf-8", errors="replace")[-800:]
+            raise RuntimeError(f"Project API exited on startup.\n{log_tail}")
+        try:
+            with socket.create_connection(("localhost", api_port), timeout=0.5):
+                break
+        except OSError:
+            time.sleep(0.2)
+    else:
+        raise RuntimeError(f"Project API did not start within 15 s on port {api_port}")
+
     return api_port
 
 
@@ -140,7 +159,10 @@ def run_app(project_id: str, app_name: str) -> dict:
             return {"error": f"npm install failed: {result.stderr[:500]}"}
 
     _ensure_suite_root_file(app_dir)
-    api_port = _ensure_api_running(root)
+    try:
+        api_port = _ensure_api_running(root)
+    except RuntimeError as exc:
+        return {"error": str(exc)}
     run_ports = _load_run_ports(root)
 
     # Start Vite frontend — pass api_port via env so vite.config.ts proxy targets it

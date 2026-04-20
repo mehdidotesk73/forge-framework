@@ -329,7 +329,10 @@ def call_project_endpoint(project_id: str, endpoint_id: str, payload_json: str) 
     root = _get_root(project_id)
     if root is None:
         return {"error": f"Project {project_id} not found"}
-    api_port = _ensure_api_running(root)
+    try:
+        api_port = _ensure_api_running(root)
+    except RuntimeError as exc:
+        return {"error": str(exc)}
     return _op(root, endpoint_id, payload_json, api_port=api_port)
 
 
