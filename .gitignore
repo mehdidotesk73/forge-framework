@@ -23,3 +23,6 @@ dev/.release-state
 
 # Claude / AI local config
 .claude/
+
+# local thinking pad
+.thoughts/
