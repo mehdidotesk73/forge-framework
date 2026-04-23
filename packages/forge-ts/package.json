@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build && cp src/forge.css dist/forge.css",
+    "build": "vite build && node -e \"require('fs').copyFileSync('src/forge.css', 'dist/forge.css')\"",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit"
   },

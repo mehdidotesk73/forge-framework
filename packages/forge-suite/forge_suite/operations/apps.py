@@ -87,13 +87,16 @@ def _ensure_api_running(root: Path) -> int:
         forge_bin = str(root / ".venv" / "bin" / "forge")
     if not _Path_exists(forge_bin):
         forge_bin = shutil.which("forge") or "forge"
-    with open(root / ".forge-api.log", "w") as api_log:
+    import os as _os
+    _env = {**_os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    with open(root / ".forge-api.log", "w", encoding="utf-8") as api_log:
         api_proc = subprocess.Popen(
             [forge_bin, "dev", "serve", "--port", str(api_port)],
             cwd=str(root),
             start_new_session=True,
             stdout=api_log,
             stderr=api_log,
+            env=_env,
         )
     run_ports["api_port"] = api_port
     run_ports["api_pid"] = api_proc.pid
