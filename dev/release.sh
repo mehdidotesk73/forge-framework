@@ -125,10 +125,11 @@ $DRY_RUN && echo -e "${Y}  DRY-RUN MODE — nothing will be published or pushed$
 [ "$FROM_PHASE" -gt 1 ] && echo -e "${Y}  Resuming from phase $FROM_PHASE${X}"
 
 # ── Read current versions from files (always, even when resuming) ──────────────
-PY_VER=$(python3 -c "import re; print(re.search(r'\"(.+?)\"', open('$REPO_ROOT/packages/forge-py/forge/version.py').read()).group(1))")
-PY_TOML_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-py/pyproject.toml').read(), re.M).group(1))")
-TS_VER=$(python3 -c "import json; print(json.load(open('$REPO_ROOT/packages/forge-ts/package.json'))['version'])")
-SUITE_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
+cd "$REPO_ROOT"
+PY_VER=$(python3 -c "import re; print(re.search(r'\"(.+?)\"', open('packages/forge-py/forge/version.py').read()).group(1))")
+PY_TOML_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('packages/forge-py/pyproject.toml').read(), re.M).group(1))")
+TS_VER=$(python3 -c "import json; print(json.load(open('packages/forge-ts/package.json'))['version'])")
+SUITE_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
 
 # If resuming from phase >= 2, versions are already bumped — read NEW_VERSION from state
 if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
