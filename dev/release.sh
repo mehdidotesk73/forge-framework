@@ -16,7 +16,8 @@
 #     bash dev/release.sh patch        ← same command, no extra flags needed
 #
 # Phases:
-#   1  Pre-flight checks (git state, credentials, version sync)
+#   1    Pre-flight checks (git state, credentials, version sync)
+#   1.5  Sync requirements-lock.txt from venv (auto-commits if changed)
 #   2  Bump all four version files
 #   3  Build @forge-suite/ts and publish to npm
 #   4  Build forge-webapp frontend, copy to webapp_dist/
@@ -349,6 +350,39 @@ PYEOF
   log_ok "@forge-suite/ts@$NEW_VERSION not yet on npm"
 
   log_phase_done 1
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 1.5 — Sync requirements-lock.txt from the active venv
+# ═══════════════════════════════════════════════════════════════════════════════
+# Always runs (not gated by FROM_PHASE — this is a housekeeping step, not a
+# resumable build phase).  Regenerates requirements-lock.txt with the exact
+# versions currently installed in the venv, commits if anything changed, and
+# updates the in-memory dirty-tree check so the rest of the script still works.
+log_header "1.5" "Sync requirements-lock.txt"
+
+LOCK_FILE="$REPO_ROOT/requirements-lock.txt"
+log_step "Freezing current venv into requirements-lock.txt..."
+
+# Freeze everything except the editable installs (-e ./packages/...) which are
+# version-controlled via pyproject.toml and don't belong in a lockfile.
+"$PYTHON" -m pip freeze --exclude-editable > "$LOCK_FILE.tmp"
+
+if [ -f "$LOCK_FILE" ] && diff -q "$LOCK_FILE" "$LOCK_FILE.tmp" > /dev/null 2>&1; then
+  rm "$LOCK_FILE.tmp"
+  log_ok "requirements-lock.txt is already up to date — no commit needed"
+else
+  mv "$LOCK_FILE.tmp" "$LOCK_FILE"
+  log_ok "requirements-lock.txt updated"
+  log_step "Committing updated requirements-lock.txt..."
+  cd "$REPO_ROOT"
+  if $DRY_RUN; then
+    log_warn "[dry-run] Would commit: requirements-lock.txt"
+  else
+    run_cmd "git add requirements-lock.txt"
+    run_cmd "git commit -m 'chore: sync requirements-lock.txt pre-release'"
+    log_ok "Committed requirements-lock.txt"
+  fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
