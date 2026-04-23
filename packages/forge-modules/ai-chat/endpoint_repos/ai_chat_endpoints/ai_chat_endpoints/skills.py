@@ -1,16 +1,17 @@
 """Skill file management — loading, writing, dependency resolution.
 
-Two skill locations are checked in priority order:
-  1. {project_root}/.forge/skills/ai_chat/       — mutable; written by the train loop
-  2. {project_root}/skills/                       — read-only defaults shipped with this module
+Primary skill location (Claude Agent SDK format):
+  {module_root}/.claude/skills/<name>/SKILL.md  — read/write; SDK auto-discovers these
 
-Skill files are Markdown with YAML frontmatter (name, description, version,
-depends_on, triggers). The Markdown body is freeform structured content that
-the LLM reads as instructions to itself.
+Legacy fallback (read-only, for migration):
+  {module_root}/skills/<name>.md                — flat Markdown with YAML frontmatter
+
+SKILL.md files use YAML frontmatter (name, description, version, depends_on,
+triggers) followed by freeform Markdown that Claude reads when it invokes the
+skill via the Skill tool.
 """
 from __future__ import annotations
 
-import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,24 +19,23 @@ from typing import Any
 
 import yaml
 
-# ── Package-default skills dir ────────────────────────────────────────────────
-# The skills/ directory sits at the root of the ai-chat module project.
-# We locate it relative to this file: endpoint_repos/ai_chat_endpoints/ai_chat_endpoints/
-# → ../../.. → module root → skills/
+# Module root is four levels up from this file:
+#   endpoint_repos/ai_chat_endpoints/ai_chat_endpoints/skills.py  →  ai-chat/
 _MODULE_ROOT: Path = Path(__file__).parent.parent.parent.parent
+
+# Legacy flat-file skills directory (read-only, kept for migration)
 PACKAGE_SKILLS_DIR: Path = _MODULE_ROOT / "skills"
 
 
-def _project_skills_dir() -> Path | None:
-    """Return .forge/skills/ai_chat/ inside the current Forge project, or None."""
-    try:
-        from forge.config import find_project_root
-        root = find_project_root()
-        d = root / ".forge" / "skills" / "ai_chat"
-        d.mkdir(parents=True, exist_ok=True)
-        return d
-    except Exception:
-        return None
+def _claude_skills_dir() -> Path:
+    """Return .claude/skills/ in the module root (created if absent).
+
+    This is the directory the Claude Agent SDK discovers skills from when cwd
+    is set to the module root.
+    """
+    d = _MODULE_ROOT / ".claude" / "skills"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 # ── Frontmatter parsing ───────────────────────────────────────────────────────
@@ -61,20 +61,28 @@ def _write_frontmatter(meta: dict, body: str) -> str:
 # ── Listing ───────────────────────────────────────────────────────────────────
 
 def list_all_skills() -> list[dict]:
-    """Return metadata dicts for all available skills. Project overrides package defaults."""
+    """Return metadata dicts for all available skills.
+
+    Primary source: .claude/skills/<name>/SKILL.md in the module root.
+    Fallback: legacy flat .md files in skills/ (read-only, for migration).
+    """
     seen: set[str] = set()
     skills: list[dict] = []
 
-    proj_dir = _project_skills_dir()
-    if proj_dir:
-        for path in sorted(proj_dir.glob("*.md")):
-            meta, _ = _parse_frontmatter(path.read_text(encoding="utf-8"))
-            skill_id = meta.get("name") or path.stem
-            if skill_id in seen:
-                continue
-            seen.add(skill_id)
-            skills.append({**meta, "name": skill_id, "source": "project", "file_path": str(path)})
+    # Primary: SDK-format skill directories
+    claude_dir = _claude_skills_dir()
+    for skill_dir in sorted(d for d in claude_dir.iterdir() if d.is_dir()):
+        path = skill_dir / "SKILL.md"
+        if not path.exists():
+            continue
+        meta, _ = _parse_frontmatter(path.read_text(encoding="utf-8"))
+        skill_id = meta.get("name") or skill_dir.name
+        if skill_id in seen:
+            continue
+        seen.add(skill_id)
+        skills.append({**meta, "name": skill_id, "source": "module", "file_path": str(path)})
 
+    # Fallback: legacy flat .md files
     if PACKAGE_SKILLS_DIR.exists():
         for path in sorted(PACKAGE_SKILLS_DIR.glob("*.md")):
             meta, _ = _parse_frontmatter(path.read_text(encoding="utf-8"))
@@ -97,13 +105,19 @@ def load_skill(skill_name: str) -> tuple[dict, str] | None:
     """Load a skill by name. Returns (meta, body) or None."""
     norm = _normalize(skill_name)
 
-    proj_dir = _project_skills_dir()
-    if proj_dir:
-        for path in proj_dir.glob("*.md"):
-            meta, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
-            if _normalize(meta.get("name", path.stem)) == norm:
-                return meta, body
+    # Primary: SDK-format .claude/skills/<name>/SKILL.md
+    claude_dir = _claude_skills_dir()
+    for skill_dir in claude_dir.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        path = skill_dir / "SKILL.md"
+        if not path.exists():
+            continue
+        meta, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
+        if _normalize(meta.get("name", skill_dir.name)) == norm:
+            return meta, body
 
+    # Fallback: legacy flat .md
     if PACKAGE_SKILLS_DIR.exists():
         for path in PACKAGE_SKILLS_DIR.glob("*.md"):
             meta, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
@@ -134,15 +148,6 @@ def load_skill_tree(skill_name: str, _visited: set[str] | None = None) -> dict[s
 
 # ── Trigger matching ──────────────────────────────────────────────────────────
 
-def match_skills_to_prompt(prompt: str) -> list[str]:
-    prompt_lower = prompt.lower()
-    matched: list[str] = []
-    for skill_meta in list_all_skills():
-        for trigger in skill_meta.get("triggers") or []:
-            if trigger.lower() in prompt_lower:
-                matched.append(skill_meta["name"])
-                break
-    return matched
 
 
 def build_skill_context(skill_names: list[str]) -> str:
@@ -163,35 +168,26 @@ def build_skill_context(skill_names: list[str]) -> str:
 
 # ── Writing ───────────────────────────────────────────────────────────────────
 
-def _skill_path_in_project(skill_name: str, proj_dir: Path) -> Path | None:
-    norm = _normalize(skill_name)
-    for path in proj_dir.glob("*.md"):
-        if _normalize(path.stem) == norm:
-            return path
-    return None
-
-
 def write_skill(skill_name: str, meta: dict, body: str) -> Path:
-    """Write or update a skill file in the project-local skills directory.
+    """Write or update a skill in .claude/skills/<name>/SKILL.md.
 
+    The SDK discovers this file automatically on the next query.
     Archives the previous version before overwriting and increments version number.
     """
-    proj_dir = _project_skills_dir()
-    if proj_dir is None:
-        raise RuntimeError(
-            "Cannot find the Forge project root — skill files cannot be written."
-        )
+    claude_dir = _claude_skills_dir()
+    skill_dir = claude_dir / _normalize(skill_name)
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
 
     existing = load_skill(skill_name)
     if existing:
         old_meta, _ = existing
         old_version = old_meta.get("version", 0)
         new_version = old_version + 1
-        old_path = _skill_path_in_project(skill_name, proj_dir)
-        if old_path and old_path.exists():
-            archive_dir = proj_dir / "archive"
+        if skill_file.exists():
+            archive_dir = skill_dir / "archive"
             archive_dir.mkdir(exist_ok=True)
-            shutil.copy2(old_path, archive_dir / f"{old_path.stem}.v{old_version}.md")
+            shutil.copy2(skill_file, archive_dir / f"SKILL.v{old_version}.md")
     else:
         new_version = 1
 
@@ -201,30 +197,8 @@ def write_skill(skill_name: str, meta: dict, body: str) -> Path:
         "version": new_version,
         "depends_on": meta.get("depends_on") or [],
         "triggers": meta.get("triggers") or [],
-        **{k: v for k, v in meta.items() if k not in ("name", "description", "version", "depends_on", "triggers")},
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    path = proj_dir / (_normalize(skill_name) + ".md")
-    path.write_text(_write_frontmatter(full_meta, body), encoding="utf-8")
-    return path
-
-
-# ── Index data builder (used by the pipeline) ─────────────────────────────────
-
-def build_index_rows() -> list[dict[str, Any]]:
-    now = datetime.now(timezone.utc).isoformat()
-    rows: list[dict[str, Any]] = []
-    for skill_meta in list_all_skills():
-        rows.append({
-            "id":              _normalize(skill_meta.get("name", "unknown")),
-            "name":            skill_meta.get("name", ""),
-            "description":     skill_meta.get("description", "") or "",
-            "version":         int(skill_meta.get("version", 1)),
-            "depends_on":      json.dumps(skill_meta.get("depends_on") or []),
-            "triggers":        json.dumps(skill_meta.get("triggers") or []),
-            "file_path":       skill_meta.get("file_path", ""),
-            "source":          skill_meta.get("source", "package"),
-            "last_indexed_at": now,
-        })
-    return rows
+    skill_file.write_text(_write_frontmatter(full_meta, body), encoding="utf-8")
+    return skill_file

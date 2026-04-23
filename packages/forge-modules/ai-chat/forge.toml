@@ -22,6 +22,13 @@ mode       = "stream"
 # ── Pipelines ─────────────────────────────────────────────────────────────────
 
 [[pipelines]]
+pipeline_id  = "a1ca4000-0003-0000-0000-000000000002"
+name         = "init_datasets"
+display_name = "AI Chat — Initialize Datasets"
+module       = "pipelines.init_datasets"
+function     = "run"
+
+[[pipelines]]
 pipeline_id  = "a1ca4000-0003-0000-0000-000000000001"
 name         = "index_skills"
 display_name = "AI Chat — Index Skills"

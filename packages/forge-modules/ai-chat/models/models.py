@@ -7,12 +7,10 @@ from __future__ import annotations
 
 from forge.model import ForgeSnapshotModel, ForgeStreamModel, field_def, forge_model
 
-# ── Permanent dataset UUIDs ───────────────────────────────────────────────────
-# NEVER change these after any project has used this module.
-
-CHAT_SESSION_DATASET_ID = "a1ca4000-0001-0000-0000-000000000001"
-CHAT_MESSAGE_DATASET_ID = "a1ca4000-0001-0000-0000-000000000002"
-SKILL_INDEX_DATASET_ID  = "a1ca4000-0001-0000-0000-000000000003"
+# Dataset UUIDs are owned by the pipelines that produce them.
+# The model layer imports them — dependency flows downward (pipeline → model).
+from pipelines.init_datasets import CHAT_SESSION_DATASET_ID, CHAT_MESSAGE_DATASET_ID  # noqa: E402
+from pipelines.index_skills import SKILL_INDEX_DATASET_ID  # noqa: E402
 
 
 # ── Models ────────────────────────────────────────────────────────────────────

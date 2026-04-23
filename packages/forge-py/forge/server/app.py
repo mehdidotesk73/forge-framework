@@ -228,6 +228,12 @@ def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
     root_str = str(root)
     if root_str not in sys.path:
         sys.path.insert(0, root_str)
+    # endpoint_repos/ must also be on sys.path so packages inside it are directly
+    # importable by name (e.g. `from ai_chat_endpoints import service`).
+    # This enables the single-level structure: endpoint_repos/<name>/__init__.py
+    endpoint_repos_str = str(root / "endpoint_repos")
+    if endpoint_repos_str not in sys.path:
+        sys.path.insert(0, endpoint_repos_str)
 
     for repo_cfg in config.endpoint_repos:
         repo_path = (root / repo_cfg.module.replace(".", "/")).resolve()
@@ -240,4 +246,4 @@ def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
             try:
                 importlib.import_module(module_name)
             except Exception as exc:
-                log.debug("Could not import %s: %s", module_name, exc)
+                log.warning("Could not import endpoint module %s: %s", module_name, exc)

@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Generator
 
 from ai_chat_endpoints.llm import AVAILABLE_MODELS, LLMProvider, resolve_provider
-from ai_chat_endpoints.skills import build_skill_context, match_skills_to_prompt, write_skill
+from ai_chat_endpoints.skills import write_skill
 from models.models import ChatMessage, ChatSession
 
 # ── In-process session state ──────────────────────────────────────────────────
@@ -112,14 +112,15 @@ def delete_session(session_id: str) -> None:
 _ASK_SYSTEM = """\
 You are an AI assistant operating in ASK MODE.
 
+Your skills are automatically available via the Skill tool — use them to ground
+every answer in domain-specific knowledge you have been trained on.
+
 Rules (absolute — no exceptions):
-- Answer using only knowledge encoded in the loaded skills below.
+- Answer using only knowledge encoded in your loaded skills.
 - Never suggest improvements to your own logic.
 - If the user implies you should learn or correct yourself, respond:
   "I am in Ask mode and cannot update my skills right now. Please switch to Train mode."
 - No files are written. No skills are updated.
-
-{skill_context}
 """
 
 _TRAIN_SYSTEM = """\
@@ -185,22 +186,13 @@ rejection_notes: |
   <optional — what failed and in what context>
 </SKILL_UPDATE>
 
-{skill_context}
-
 {session_context}
 """
 
 
 def _build_system_prompt(session: Any, state: dict) -> str:
-    skill_context_text = build_skill_context(state["loaded_skills"])
-    skill_block = (
-        f"== LOADED SKILLS ==\n\n{skill_context_text}"
-        if skill_context_text
-        else "== LOADED SKILLS ==\n\nNo skills loaded yet."
-    )
-
     if session.mode == "ask":
-        return _ASK_SYSTEM.format(skill_context=skill_block)
+        return _ASK_SYSTEM
 
     phase_notes: list[str] = []
     if state["current_estimate"]:
@@ -216,7 +208,6 @@ def _build_system_prompt(session: Any, state: dict) -> str:
     session_context_text = "\n\n".join(phase_notes) if phase_notes else "No estimate produced yet."
 
     return _TRAIN_SYSTEM.format(
-        skill_context=skill_block,
         session_context=f"== SESSION CONTEXT ==\n\n{session_context_text}",
     )
 
@@ -289,10 +280,6 @@ def send_message_stream(
     ChatSession.get(session_id).update(updated_at=now)  # type: ignore[union-attr]
 
     state = _get_state(session_id)
-    if not state["loaded_skills"]:
-        matched = match_skills_to_prompt(message)
-        _update_state(session_id, loaded_skills=matched, phase="awaiting_example")
-        state["loaded_skills"] = matched
 
     all_msgs = sorted(ChatMessage.filter(session_id=session_id), key=lambda m: m.created_at)
     llm_messages = [

@@ -37,6 +37,12 @@ class EndpointBuilder:
         # Project root must be on path so endpoint modules can import model classes
         if str(self.root) not in sys.path:
             sys.path.insert(0, str(self.root))
+        # endpoint_repos/ must also be on path so packages inside it are directly
+        # importable by name (e.g. `from ai_chat_endpoints import service`).
+        # This enables the single-level structure: endpoint_repos/<name>/__init__.py
+        endpoint_repos_dir = str(self.root / "endpoint_repos")
+        if endpoint_repos_dir not in sys.path:
+            sys.path.insert(0, endpoint_repos_dir)
 
         # Import all Python modules in the repo to trigger decorator registration
         self._import_repo_modules(repo_path)
@@ -61,7 +67,9 @@ class EndpointBuilder:
                 importlib.import_module(module_name)
             except Exception as exc:
                 import logging
-                logging.getLogger(__name__).debug("Could not import %s: %s", module_name, exc)
+                logging.getLogger(__name__).warning(
+                    "Could not import endpoint module %s: %s", module_name, exc
+                )
 
     def _build_descriptor(
         self,
