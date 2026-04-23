@@ -105,17 +105,33 @@ if [[ -z "$BUMP" && -z "$EXPLICIT_VERSION" && "$FROM_PHASE" -eq 1 ]]; then
 fi
 
 # ── Auto-activate repo venv if none is active ─────────────────────────────────
-if [[ -z "${VIRTUAL_ENV:-}" ]] && [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
+# Support both Unix (.venv/bin/activate) and Windows (.venv/Scripts/activate)
+_VENV_ACTIVATE=""
+if [[ -f "$REPO_ROOT/.venv/Scripts/activate" ]]; then
+  _VENV_ACTIVATE="$REPO_ROOT/.venv/Scripts/activate"
+elif [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
+  _VENV_ACTIVATE="$REPO_ROOT/.venv/bin/activate"
+fi
+if [[ -z "${VIRTUAL_ENV:-}" ]] && [[ -n "$_VENV_ACTIVATE" ]]; then
   echo "  (activating $REPO_ROOT/.venv)"
   # shellcheck source=/dev/null
-  source "$REPO_ROOT/.venv/bin/activate"
+  source "$_VENV_ACTIVATE"
 fi
 
 # ── Detect Python + Twine ─────────────────────────────────────────────────────
-PYTHON="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/python3}"
-PYTHON="${PYTHON:-$(command -v python3)}"
-TWINE="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/twine}"
-TWINE="${TWINE:-$(command -v twine 2>/dev/null || echo "")}"
+# On Windows venvs the executables live in Scripts/, not bin/
+if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+  if [[ -f "$VIRTUAL_ENV/Scripts/python.exe" ]]; then
+    PYTHON="$VIRTUAL_ENV/Scripts/python.exe"
+    TWINE="$VIRTUAL_ENV/Scripts/twine.exe"
+  else
+    PYTHON="$VIRTUAL_ENV/bin/python3"
+    TWINE="$VIRTUAL_ENV/bin/twine"
+  fi
+else
+  PYTHON="$(command -v python3 || command -v python)"
+  TWINE="$(command -v twine 2>/dev/null || echo "")"
+fi
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}${C}forge-framework release script${X}"
@@ -125,10 +141,10 @@ $DRY_RUN && echo -e "${Y}  DRY-RUN MODE — nothing will be published or pushed$
 [ "$FROM_PHASE" -gt 1 ] && echo -e "${Y}  Resuming from phase $FROM_PHASE${X}"
 
 # ── Read current versions from files (always, even when resuming) ──────────────
-PY_VER=$(python3 -c "import re; print(re.search(r'\"(.+?)\"', open('$REPO_ROOT/packages/forge-py/forge/version.py').read()).group(1))")
-PY_TOML_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-py/pyproject.toml').read(), re.M).group(1))")
-TS_VER=$(python3 -c "import json; print(json.load(open('$REPO_ROOT/packages/forge-ts/package.json'))['version'])")
-SUITE_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
+PY_VER=$("$PYTHON" -c "import re; print(re.search(r'\"(.+?)\"', open('$REPO_ROOT/packages/forge-py/forge/version.py').read()).group(1))")
+PY_TOML_VER=$("$PYTHON" -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-py/pyproject.toml').read(), re.M).group(1))")
+TS_VER=$("$PYTHON" -c "import json; print(json.load(open('$REPO_ROOT/packages/forge-ts/package.json'))['version'])")
+SUITE_VER=$("$PYTHON" -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
 
 # If resuming from phase >= 2, versions are already bumped — read NEW_VERSION from state
 if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
@@ -138,7 +154,7 @@ if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
 elif [[ -n "$EXPLICIT_VERSION" ]]; then
   NEW_VERSION="$EXPLICIT_VERSION"
 elif [[ -n "$BUMP" ]]; then
-  NEW_VERSION=$(python3 - "$PY_VER" "$BUMP" <<'PYEOF'
+  NEW_VERSION=$("$PYTHON" - "$PY_VER" "$BUMP" <<'PYEOF'
 import sys
 major, minor, patch = map(int, sys.argv[1].split("."))
 bump = sys.argv[2]
