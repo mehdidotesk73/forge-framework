@@ -451,12 +451,14 @@ if [ "$FROM_PHASE" -le 5 ]; then
     # For forge-suite: verify webapp_dist was packaged
     if [[ "$pkg" == "forge-suite" ]]; then
       log_step "Verifying webapp_dist is included in forge-suite wheel..."
-      DIST_FILE_COUNT=$("$PYTHON" -c "
-import zipfile
-with zipfile.ZipFile('$WHEEL') as z:
+      # Pass $WHEEL as an argument so Git Bash converts the POSIX path for Windows Python
+      DIST_FILE_COUNT=$("$PYTHON" - "$WHEEL" <<'PYEOF'
+import zipfile, sys
+with zipfile.ZipFile(sys.argv[1]) as z:
     n = sum(1 for f in z.namelist() if 'webapp_dist' in f)
     print(n)
-")
+PYEOF
+)
       if [[ "$DIST_FILE_COUNT" -eq 0 ]]; then
         die "webapp_dist NOT found inside $WHEEL_NAME — check pyproject.toml force-include"
       fi
