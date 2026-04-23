@@ -26,13 +26,23 @@ function columnarToRecords(
   );
 }
 
-function buildPreviewSchema(columns: string[]): ForgeSchema {
+function buildPreviewSchema(
+  columns: string[],
+  fields?: Record<string, { display?: string; display_hint?: string }>,
+): ForgeSchema {
   return {
     name: "Preview",
     mode: "snapshot",
     primary_key: null,
     fields: Object.fromEntries(
-      columns.map((col) => [col, { type: "string" as const, display: col }]),
+      columns.map((col) => [
+        col,
+        {
+          type: "string" as const,
+          display: fields?.[col]?.display ?? col,
+          display_hint: fields?.[col]?.display_hint,
+        },
+      ]),
     ),
   };
 }
@@ -144,7 +154,7 @@ export function ModelPage() {
   const { data: previewResult, isLoading: previewLoading } = useQuery({
     queryKey: ["preview_model", active?.id, previewModel?.name, previewLimit],
     queryFn: () =>
-      callEndpoint<{ columns?: string[]; rows?: unknown[][]; error?: string }>(
+      callEndpoint<{ columns?: string[]; rows?: unknown[][]; fields?: Record<string, { display?: string; display_hint?: string }>; error?: string }>(
         PREVIEW_MODEL_ID,
         {
           project_id: active?.id ?? "",
@@ -293,7 +303,7 @@ export function ModelPage() {
               previewResult.columns!,
               previewResult.rows!,
             );
-            const schema = buildPreviewSchema(previewResult.columns!);
+            const schema = buildPreviewSchema(previewResult.columns!, previewResult.fields);
             const objectSet = createObjectSet(
               records,
               schema,

@@ -58,6 +58,8 @@ def preview_model(root: Path, model_name: str, limit: int = 200) -> dict:
 
     try:
         with StorageEngine(forge_dir) as engine:
-            return _df_to_table(engine.read_dataset(dataset_id), limit)
+            result = _df_to_table(engine.read_dataset(dataset_id), limit)
+            result["fields"] = schema.get("fields", {})
+            return result
     except Exception as exc:
         return {"error": str(exc)}
