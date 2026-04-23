@@ -166,6 +166,20 @@ else:                 patch += 1
 print(f"{major}.{minor}.{patch}")
 PYEOF
 )
+  # Auto-advance past any already-tagged versions (handles interrupted prior releases)
+  while git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; do
+    echo -e "  ${Y}⚠  Tag v$NEW_VERSION already exists — advancing to next $BUMP version${X}"
+    NEW_VERSION=$("$PYTHON" - "$NEW_VERSION" "$BUMP" <<'PYEOF'
+import sys
+major, minor, patch = map(int, sys.argv[1].split("."))
+bump = sys.argv[2]
+if   bump == "major": major += 1; minor = 0; patch = 0
+elif bump == "minor": minor += 1; patch = 0
+else:                 patch += 1
+print(f"{major}.{minor}.{patch}")
+PYEOF
+)
+  done
 else
   # Resuming without state file — derive NEW_VERSION from already-bumped files
   NEW_VERSION="$PY_VER"
@@ -320,10 +334,10 @@ PYEOF
   fi
   log_ok "All packages at v$PY_VER — consistent"
 
-  # 1g. Tag doesn't already exist
+  # 1g. Tag doesn't already exist (guaranteed by auto-advance above, but verify for --version/resume)
   log_step "Checking tag v$NEW_VERSION doesn't already exist..."
   if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
-    die "Tag v$NEW_VERSION already exists. Choose a different version."
+    die "Tag v$NEW_VERSION already exists. Use --version X.Y.Z to specify a different version."
   fi
   log_ok "Tag v$NEW_VERSION is available"
 
