@@ -31,8 +31,10 @@
 set -euo pipefail
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Use pwd -W on Windows (Git Bash) to get a D:/... path that Windows Python understands.
+# Falls back to regular pwd on Linux/macOS where -W is not available.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && { pwd -W 2>/dev/null || pwd; })"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && { pwd -W 2>/dev/null || pwd; })"
 LOG_DIR="$SCRIPT_DIR/logs"
 STATE_FILE="$SCRIPT_DIR/.release-state"
 LOG_FILE="$LOG_DIR/release-$(date +%Y%m%d-%H%M%S).log"
