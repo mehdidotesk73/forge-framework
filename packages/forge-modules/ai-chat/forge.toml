@@ -1,0 +1,48 @@
+[project]
+name          = "ai-chat"
+forge_version = "0.1.0"
+
+# ── Models ────────────────────────────────────────────────────────────────────
+
+[[models]]
+class_name = "ChatSession"
+module     = "models.models"
+mode       = "snapshot"
+
+[[models]]
+class_name = "ChatMessage"
+module     = "models.models"
+mode       = "snapshot"
+
+[[models]]
+class_name = "SkillIndex"
+module     = "models.models"
+mode       = "stream"
+
+# ── Pipelines ─────────────────────────────────────────────────────────────────
+
+[[pipelines]]
+pipeline_id  = "a1ca4000-0003-0000-0000-000000000002"
+name         = "init_datasets"
+display_name = "AI Chat — Initialize Datasets"
+module       = "pipelines.init_datasets"
+function     = "run"
+
+[[pipelines]]
+pipeline_id  = "a1ca4000-0003-0000-0000-000000000001"
+name         = "index_skills"
+display_name = "AI Chat — Index Skills"
+module       = "pipelines.index_skills"
+function     = "run"
+
+# ── Endpoint repos ────────────────────────────────────────────────────────────
+
+[[endpoint_repos]]
+module = "ai_chat_endpoints.endpoints"
+
+# ── Apps ──────────────────────────────────────────────────────────────────────
+
+[[apps]]
+name = "ai-chat-app"
+path = "./apps/ai-chat-app"
+port = 3001

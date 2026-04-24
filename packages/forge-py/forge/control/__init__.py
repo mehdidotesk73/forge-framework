@@ -10,6 +10,7 @@ from forge.control.decorator import (
     get_endpoint_registry,
 )
 from forge.control.builder import EndpointBuilder
+from forge.control.pipeline_utils import run_pipeline
 
 __all__ = [
     "action_endpoint",
@@ -21,4 +22,5 @@ __all__ = [
     "StreamEvent",
     "get_endpoint_registry",
     "EndpointBuilder",
+    "run_pipeline",
 ]

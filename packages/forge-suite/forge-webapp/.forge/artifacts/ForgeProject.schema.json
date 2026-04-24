@@ -1,0 +1,10 @@
+{
+  "name": "ForgeProject",
+  "mode": "snapshot",
+  "backing_dataset_id": "09c6533b-b8b5-43f4-b500-acc05d191fe1",
+  "backing_dataset_name": "09c6533b-b8b5-43f4-b500-acc05d191fe1",
+  "snapshot_dataset_id": "fd82da1f-3d59-497e-9836-67b53cbabda2",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:32.524527+00:00"
+}

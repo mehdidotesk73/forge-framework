@@ -447,7 +447,7 @@ _APP_PACKAGE_JSON = '''\
 '''
 
 # vite.config.ts reads FORGE_SUITE_ROOT from ~/.forge/env at build/dev time.
-# Falls back to a relative path from the project's .forge/suite_root file.
+# Falls back to a relative path from the project's .forge-suite/suite_root file.
 _APP_VITE_CONFIG = '''\
 import {{ defineConfig }} from "vite";
 import react from "@vitejs/plugin-react";
@@ -472,7 +472,7 @@ function forgeTsSrc(): string | null {{
       }}
     }}
   }}
-  const suiteRootFile = resolve(__dirname, ".forge", "suite_root");
+  const suiteRootFile = resolve(__dirname, ".forge-suite", "suite_root");
   if (existsSync(suiteRootFile)) {{
     const result = tryPath(readFileSync(suiteRootFile, "utf8").trim());
     if (result) return result;
@@ -698,11 +698,11 @@ def create_app(
         command_file.write_text(_APP_COMMAND.format(app_name=name, port=port))
         command_file.chmod(0o755)
 
-    # Write .forge/suite_root so vite.config.ts can resolve forge-ts at IDE/build time
+    # Write .forge-suite/suite_root so vite.config.ts can resolve forge-ts at IDE/build time
     if suite_root is None:
         suite_root = resolve_suite_root()
     if suite_root is not None:
-        suite_root_file = app_dir / ".forge" / "suite_root"
+        suite_root_file = app_dir / ".forge-suite" / "suite_root"
         suite_root_file.parent.mkdir(parents=True, exist_ok=True)
         suite_root_file.write_text(str(suite_root), encoding="utf-8")
 

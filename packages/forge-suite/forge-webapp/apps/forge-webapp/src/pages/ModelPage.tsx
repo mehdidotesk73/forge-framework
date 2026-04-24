@@ -26,13 +26,23 @@ function columnarToRecords(
   );
 }
 
-function buildPreviewSchema(columns: string[]): ForgeSchema {
+function buildPreviewSchema(
+  columns: string[],
+  fields?: Record<string, { display?: string; display_hint?: string }>,
+): ForgeSchema {
   return {
     name: "Preview",
     mode: "snapshot",
     primary_key: null,
     fields: Object.fromEntries(
-      columns.map((col) => [col, { type: "string" as const, display: col }]),
+      columns.map((col) => [
+        col,
+        {
+          type: "string" as const,
+          display: fields?.[col]?.display ?? col,
+          display_hint: fields?.[col]?.display_hint,
+        },
+      ]),
     ),
   };
 }
@@ -144,14 +154,16 @@ export function ModelPage() {
   const { data: previewResult, isLoading: previewLoading } = useQuery({
     queryKey: ["preview_model", active?.id, previewModel?.name, previewLimit],
     queryFn: () =>
-      callEndpoint<{ columns?: string[]; rows?: unknown[][]; error?: string }>(
-        PREVIEW_MODEL_ID,
-        {
-          project_id: active?.id ?? "",
-          model_name: previewModel?.name ?? "",
-          limit: previewLimit,
-        },
-      ),
+      callEndpoint<{
+        columns?: string[];
+        rows?: unknown[][];
+        fields?: Record<string, { display?: string; display_hint?: string }>;
+        error?: string;
+      }>(PREVIEW_MODEL_ID, {
+        project_id: active?.id ?? "",
+        model_name: previewModel?.name ?? "",
+        limit: previewLimit,
+      }),
     enabled: !!active && !!previewModel,
     placeholderData: (prev) => prev,
   });
@@ -226,12 +238,12 @@ export function ModelPage() {
   );
 
   return (
-    <div className='page'>
-      <div className='page-header'>
-        <h1 className='page-title'>Model</h1>
+    <div className="page">
+      <div className="page-header">
+        <h1 className="page-title">Model</h1>
         {active && (
           <ButtonGroup
-            size='sm'
+            size="sm"
             buttons={[
               {
                 label: "+ New Model",
@@ -271,7 +283,7 @@ export function ModelPage() {
           setCopyColumn("");
         }}
         title={previewModel ? `Preview — ${previewModel.name}` : ""}
-        size='xl'
+        size="xl"
       >
         {previewLoading || !previewResult ? (
           <div
@@ -293,7 +305,10 @@ export function ModelPage() {
               previewResult.columns!,
               previewResult.rows!,
             );
-            const schema = buildPreviewSchema(previewResult.columns!);
+            const schema = buildPreviewSchema(
+              previewResult.columns!,
+              previewResult.fields,
+            );
             const objectSet = createObjectSet(
               records,
               schema,
@@ -322,26 +337,32 @@ export function ModelPage() {
                   alignItems="center"
                   gap="8px"
                   padding="0"
-                  style={{ marginTop: 10, justifyContent: "space-between", flexWrap: "wrap" }}
+                  style={{
+                    marginTop: 10,
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div>
                     {previewResult.rows.length === previewLimit && (
                       <ButtonGroup
                         size="sm"
-                        buttons={[{
-                          label: "Load 200 more",
-                          variant: "ghost",
-                          action: {
-                            kind: "ui",
-                            handler: () => {
-                              if (scrollRef.current)
-                                savedScrollHeight.current =
-                                  scrollRef.current.scrollHeight -
-                                  scrollRef.current.scrollTop;
-                              setPreviewLimit((l) => l + 200);
+                        buttons={[
+                          {
+                            label: "Load 200 more",
+                            variant: "ghost",
+                            action: {
+                              kind: "ui",
+                              handler: () => {
+                                if (scrollRef.current)
+                                  savedScrollHeight.current =
+                                    scrollRef.current.scrollHeight -
+                                    scrollRef.current.scrollTop;
+                                setPreviewLimit((l) => l + 200);
+                              },
                             },
                           },
-                        }]}
+                        ]}
                       />
                     )}
                   </div>
@@ -356,12 +377,12 @@ export function ModelPage() {
       </Modal>
 
       {!active ? (
-        <div className='empty-state'>No active project.</div>
+        <div className="empty-state">No active project.</div>
       ) : (
         <>
           {showNew && (
-            <div className='card' style={{ marginBottom: 20 }}>
-              <div className='section-title' style={{ marginBottom: 12 }}>
+            <div className="card" style={{ marginBottom: 20 }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>
                 New Model
               </div>
               {newResult?.file ? (
@@ -397,7 +418,7 @@ export function ModelPage() {
                     code "{newResult.file}"
                   </code>
                   <ButtonGroup
-                    size='sm'
+                    size="sm"
                     buttons={[
                       {
                         label: "Close",
@@ -413,7 +434,12 @@ export function ModelPage() {
                   />
                 </div>
               ) : (
-                <Container direction="column" gap="8px" padding="0" style={{ maxWidth: 420 }}>
+                <Container
+                  direction="column"
+                  gap="8px"
+                  padding="0"
+                  style={{ maxWidth: 420 }}
+                >
                   <Selector
                     value={selectedDataset}
                     options={[
@@ -437,12 +463,14 @@ export function ModelPage() {
                       setModelName(v);
                       setNewResult(null);
                     }}
-                    placeholder='PascalCase class name, e.g. BitcoinPrice'
+                    placeholder="PascalCase class name, e.g. BitcoinPrice"
                   />
                   <RadioGroup
                     name="model-mode"
                     value={modelMode}
-                    onChange={(v) => setModelMode(v as "snapshot" | "immutable")}
+                    onChange={(v) =>
+                      setModelMode(v as "snapshot" | "immutable")
+                    }
                     options={[
                       { value: "snapshot", label: "snapshot" },
                       { value: "immutable", label: "immutable" },
@@ -454,7 +482,7 @@ export function ModelPage() {
                     </div>
                   )}
                   <ButtonGroup
-                    size='sm'
+                    size="sm"
                     buttons={[
                       {
                         label: createModel.isPending
@@ -487,12 +515,12 @@ export function ModelPage() {
             </div>
           )}
 
-          <div className='card' style={{ marginBottom: 20 }}>
-            <div className='section-title' style={{ marginBottom: 12 }}>
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>
               Object Types
             </div>
             {models.length === 0 ? (
-              <div className='empty-state' style={{ padding: "24px 0" }}>
+              <div className="empty-state" style={{ padding: "24px 0" }}>
                 No models found. Use "+ New Model" or sync after running{" "}
                 <code>forge model build</code>.
               </div>
@@ -550,16 +578,18 @@ export function ModelPage() {
                     );
                   }
                   if (field === "field_count")
-                    return <span className='mono'>{String(value || "—")}</span>;
+                    return <span className="mono">{String(value || "—")}</span>;
                   if (field === "backing_dataset_id") {
                     const v = String(value ?? "");
                     const dname = (row as ObjectTypeRow).backing_dataset_name;
                     const label = dname
                       ? `${dname} (${v.slice(0, 8)}…)`
-                      : v ? v.slice(0, 8) + "…" : "—";
+                      : v
+                        ? v.slice(0, 8) + "…"
+                        : "—";
                     return (
                       <span
-                        className='mono'
+                        className="mono"
                         style={{ color: "var(--text-muted)", fontSize: 11 }}
                       >
                         {label}
@@ -569,7 +599,7 @@ export function ModelPage() {
                   if (field === "built_at") {
                     const v = String(value ?? "");
                     return v ? (
-                      <span className='mono' style={{ fontSize: 12 }}>
+                      <span className="mono" style={{ fontSize: 12 }}>
                         {v.slice(0, 19).replace("T", " ")}
                       </span>
                     ) : (
@@ -588,7 +618,7 @@ export function ModelPage() {
 
           {(logs.length > 0 || running) && (
             <div>
-              <div className='section-title' style={{ marginBottom: 8 }}>
+              <div className="section-title" style={{ marginBottom: 8 }}>
                 Build Output
               </div>
               <LogPanel lines={logs} running={running} />

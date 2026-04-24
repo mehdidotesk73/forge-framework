@@ -1,0 +1,10 @@
+{
+  "name": "Pipeline",
+  "mode": "snapshot",
+  "backing_dataset_id": "4f9fef2c-ef90-4ae8-a887-94989caa2af3",
+  "backing_dataset_name": "4f9fef2c-ef90-4ae8-a887-94989caa2af3",
+  "snapshot_dataset_id": "195c02af-cc48-4ded-82bb-b4f2d61a658b",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:33.012184+00:00"
+}

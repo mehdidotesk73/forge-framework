@@ -1,0 +1,10 @@
+{
+  "name": "ArtifactStamp",
+  "mode": "snapshot",
+  "backing_dataset_id": "cce19a08-9bef-4781-b6b1-de1c4eec13c6",
+  "backing_dataset_name": "cce19a08-9bef-4781-b6b1-de1c4eec13c6",
+  "snapshot_dataset_id": "fcf6f995-9d23-453e-844c-99c5df34c04b",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:32.769270+00:00"
+}

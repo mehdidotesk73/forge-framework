@@ -2,6 +2,9 @@
 # Install with: pip install -r requirements-dev.txt
 -r requirements.txt
 
+# Forge modules — install with all optional extras so the full codebase type-checks
+-e ./packages/forge-modules/ai-chat[all]
+
 # Type stubs so the IDE understands third-party libraries
 pandas-stubs
 

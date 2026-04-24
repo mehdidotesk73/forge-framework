@@ -1,0 +1,10 @@
+{
+  "name": "App",
+  "mode": "snapshot",
+  "backing_dataset_id": "83c25824-f5c8-478f-baaa-3ac3900a2c3a",
+  "backing_dataset_name": "83c25824-f5c8-478f-baaa-3ac3900a2c3a",
+  "snapshot_dataset_id": "c7cb6a38-37b2-4bd2-8b06-711046bf9588",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:34.216599+00:00"
+}

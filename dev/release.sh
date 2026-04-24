@@ -16,7 +16,8 @@
 #     bash dev/release.sh patch        ← same command, no extra flags needed
 #
 # Phases:
-#   1  Pre-flight checks (git state, credentials, version sync)
+#   1    Pre-flight checks (git state, credentials, version sync)
+#   1.5  Sync requirements-lock.txt from venv (auto-commits if changed)
 #   2  Bump all four version files
 #   3  Build @forge-suite/ts and publish to npm
 #   4  Build forge-webapp frontend, copy to webapp_dist/
@@ -31,8 +32,10 @@
 set -euo pipefail
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Use pwd -W on Windows (Git Bash) to get a D:/... path that Windows Python understands.
+# Falls back to regular pwd on Linux/macOS where -W is not available.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && { pwd -W 2>/dev/null || pwd; })"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && { pwd -W 2>/dev/null || pwd; })"
 LOG_DIR="$SCRIPT_DIR/logs"
 STATE_FILE="$SCRIPT_DIR/.release-state"
 LOG_FILE="$LOG_DIR/release-$(date +%Y%m%d-%H%M%S).log"
@@ -105,17 +108,33 @@ if [[ -z "$BUMP" && -z "$EXPLICIT_VERSION" && "$FROM_PHASE" -eq 1 ]]; then
 fi
 
 # ── Auto-activate repo venv if none is active ─────────────────────────────────
-if [[ -z "${VIRTUAL_ENV:-}" ]] && [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
+# Support both Unix (.venv/bin/activate) and Windows (.venv/Scripts/activate)
+_VENV_ACTIVATE=""
+if [[ -f "$REPO_ROOT/.venv/Scripts/activate" ]]; then
+  _VENV_ACTIVATE="$REPO_ROOT/.venv/Scripts/activate"
+elif [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
+  _VENV_ACTIVATE="$REPO_ROOT/.venv/bin/activate"
+fi
+if [[ -z "${VIRTUAL_ENV:-}" ]] && [[ -n "$_VENV_ACTIVATE" ]]; then
   echo "  (activating $REPO_ROOT/.venv)"
   # shellcheck source=/dev/null
-  source "$REPO_ROOT/.venv/bin/activate"
+  source "$_VENV_ACTIVATE"
 fi
 
 # ── Detect Python + Twine ─────────────────────────────────────────────────────
-PYTHON="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/python3}"
-PYTHON="${PYTHON:-$(command -v python3)}"
-TWINE="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/twine}"
-TWINE="${TWINE:-$(command -v twine 2>/dev/null || echo "")}"
+# On Windows venvs the executables live in Scripts/, not bin/
+if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+  if [[ -f "$VIRTUAL_ENV/Scripts/python.exe" ]]; then
+    PYTHON="$VIRTUAL_ENV/Scripts/python.exe"
+    TWINE="$VIRTUAL_ENV/Scripts/twine.exe"
+  else
+    PYTHON="$VIRTUAL_ENV/bin/python3"
+    TWINE="$VIRTUAL_ENV/bin/twine"
+  fi
+else
+  PYTHON="$(command -v python3 || command -v python)"
+  TWINE="$(command -v twine 2>/dev/null || echo "")"
+fi
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}${C}forge-framework release script${X}"
@@ -125,10 +144,10 @@ $DRY_RUN && echo -e "${Y}  DRY-RUN MODE — nothing will be published or pushed$
 [ "$FROM_PHASE" -gt 1 ] && echo -e "${Y}  Resuming from phase $FROM_PHASE${X}"
 
 # ── Read current versions from files (always, even when resuming) ──────────────
-PY_VER=$(python3 -c "import re; print(re.search(r'\"(.+?)\"', open('$REPO_ROOT/packages/forge-py/forge/version.py').read()).group(1))")
-PY_TOML_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-py/pyproject.toml').read(), re.M).group(1))")
-TS_VER=$(python3 -c "import json; print(json.load(open('$REPO_ROOT/packages/forge-ts/package.json'))['version'])")
-SUITE_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
+PY_VER=$("$PYTHON" -c "import re; print(re.search(r'\"(.+?)\"', open('$REPO_ROOT/packages/forge-py/forge/version.py').read()).group(1))")
+PY_TOML_VER=$("$PYTHON" -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-py/pyproject.toml').read(), re.M).group(1))")
+TS_VER=$("$PYTHON" -c "import json; print(json.load(open('$REPO_ROOT/packages/forge-ts/package.json'))['version'])")
+SUITE_VER=$("$PYTHON" -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
 
 # If resuming from phase >= 2, versions are already bumped — read NEW_VERSION from state
 if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
@@ -138,7 +157,7 @@ if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
 elif [[ -n "$EXPLICIT_VERSION" ]]; then
   NEW_VERSION="$EXPLICIT_VERSION"
 elif [[ -n "$BUMP" ]]; then
-  NEW_VERSION=$(python3 - "$PY_VER" "$BUMP" <<'PYEOF'
+  NEW_VERSION=$("$PYTHON" - "$PY_VER" "$BUMP" <<'PYEOF'
 import sys
 major, minor, patch = map(int, sys.argv[1].split("."))
 bump = sys.argv[2]
@@ -148,6 +167,20 @@ else:                 patch += 1
 print(f"{major}.{minor}.{patch}")
 PYEOF
 )
+  # Auto-advance past any already-tagged versions (handles interrupted prior releases)
+  while git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; do
+    echo -e "  ${Y}⚠  Tag v$NEW_VERSION already exists — advancing to next $BUMP version${X}"
+    NEW_VERSION=$("$PYTHON" - "$NEW_VERSION" "$BUMP" <<'PYEOF'
+import sys
+major, minor, patch = map(int, sys.argv[1].split("."))
+bump = sys.argv[2]
+if   bump == "major": major += 1; minor = 0; patch = 0
+elif bump == "minor": minor += 1; patch = 0
+else:                 patch += 1
+print(f"{major}.{minor}.{patch}")
+PYEOF
+)
+  done
 else
   # Resuming without state file — derive NEW_VERSION from already-bumped files
   NEW_VERSION="$PY_VER"
@@ -302,10 +335,10 @@ PYEOF
   fi
   log_ok "All packages at v$PY_VER — consistent"
 
-  # 1g. Tag doesn't already exist
+  # 1g. Tag doesn't already exist (guaranteed by auto-advance above, but verify for --version/resume)
   log_step "Checking tag v$NEW_VERSION doesn't already exist..."
   if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
-    die "Tag v$NEW_VERSION already exists. Choose a different version."
+    die "Tag v$NEW_VERSION already exists. Use --version X.Y.Z to specify a different version."
   fi
   log_ok "Tag v$NEW_VERSION is available"
 
@@ -317,6 +350,39 @@ PYEOF
   log_ok "@forge-suite/ts@$NEW_VERSION not yet on npm"
 
   log_phase_done 1
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 1.5 — Sync requirements-lock.txt from the active venv
+# ═══════════════════════════════════════════════════════════════════════════════
+# Always runs (not gated by FROM_PHASE — this is a housekeeping step, not a
+# resumable build phase).  Regenerates requirements-lock.txt with the exact
+# versions currently installed in the venv, commits if anything changed, and
+# updates the in-memory dirty-tree check so the rest of the script still works.
+log_header "1.5" "Sync requirements-lock.txt"
+
+LOCK_FILE="$REPO_ROOT/requirements-lock.txt"
+log_step "Freezing current venv into requirements-lock.txt..."
+
+# Freeze everything except the editable installs (-e ./packages/...) which are
+# version-controlled via pyproject.toml and don't belong in a lockfile.
+"$PYTHON" -m pip freeze --exclude-editable > "$LOCK_FILE.tmp"
+
+if [ -f "$LOCK_FILE" ] && diff -q "$LOCK_FILE" "$LOCK_FILE.tmp" > /dev/null 2>&1; then
+  rm "$LOCK_FILE.tmp"
+  log_ok "requirements-lock.txt is already up to date — no commit needed"
+else
+  mv "$LOCK_FILE.tmp" "$LOCK_FILE"
+  log_ok "requirements-lock.txt updated"
+  log_step "Committing updated requirements-lock.txt..."
+  cd "$REPO_ROOT"
+  if $DRY_RUN; then
+    log_warn "[dry-run] Would commit: requirements-lock.txt"
+  else
+    run_cmd "git add requirements-lock.txt"
+    run_cmd "git commit -m 'chore: sync requirements-lock.txt pre-release'"
+    log_ok "Committed requirements-lock.txt"
+  fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -5,7 +5,12 @@ __pycache__/
 .DS_Store
 node_modules/
 dist/
-.forge/
+# Forge runtime data (local only)
+.forge/data/
+.forge/*.duckdb
+.forge/*.duckdb.wal
+# Forge Suite machine-local files
+.forge-suite/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/

@@ -75,3 +75,9 @@ def run_endpoint_build(project_id: str):
         yield StreamEvent(data=f"Project {project_id} not found", event="error")
         return
     yield from _to_stream_events(stream_endpoint_build(root))
+    # Sync the forge-suite database so the UI reflects the newly built endpoints
+    try:
+        from forge_suite.operations.projects import sync_project
+        sync_project(project_id)
+    except Exception as exc:
+        yield StreamEvent(data=f"Warning: sync after build failed: {exc}", event="message")

@@ -1,0 +1,10 @@
+{
+  "name": "EndpointRepo",
+  "mode": "snapshot",
+  "backing_dataset_id": "74cfd862-1241-43fc-b01e-390cae2ee457",
+  "backing_dataset_name": "74cfd862-1241-43fc-b01e-390cae2ee457",
+  "snapshot_dataset_id": "3957154f-4118-4885-ad39-8ce2887cae5a",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:33.720883+00:00"
+}

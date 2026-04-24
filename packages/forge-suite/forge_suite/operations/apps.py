@@ -13,7 +13,7 @@ def _find_free_port() -> int:
 
 
 def _run_ports_path(root: Path) -> Path:
-    return root / ".forge" / "run_ports.json"
+    return root / ".forge-suite" / "run_ports.json"
 
 
 def _load_run_ports(root: Path) -> dict:
@@ -87,13 +87,16 @@ def _ensure_api_running(root: Path) -> int:
         forge_bin = str(root / ".venv" / "bin" / "forge")
     if not _Path_exists(forge_bin):
         forge_bin = shutil.which("forge") or "forge"
-    with open(root / ".forge-api.log", "w") as api_log:
+    import os as _os
+    _env = {**_os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    with open(root / ".forge-api.log", "w", encoding="utf-8") as api_log:
         api_proc = subprocess.Popen(
             [forge_bin, "dev", "serve", "--port", str(api_port)],
             cwd=str(root),
             start_new_session=True,
             stdout=api_log,
             stderr=api_log,
+            env=_env,
         )
     run_ports["api_port"] = api_port
     run_ports["api_pid"] = api_proc.pid
@@ -125,8 +128,8 @@ def _Path_exists(p: str) -> bool:
 
 
 def _ensure_suite_root_file(app_dir: Path) -> None:
-    """Write .forge/suite_root into the app dir so vite.config.ts can resolve @forge-suite/ts."""
-    suite_root_file = app_dir / ".forge" / "suite_root"
+    """Write .forge-suite/suite_root into the app dir so vite.config.ts can resolve @forge-suite/ts."""
+    suite_root_file = app_dir / ".forge-suite" / "suite_root"
     if suite_root_file.exists():
         return
     from forge.operations.projects import resolve_suite_root

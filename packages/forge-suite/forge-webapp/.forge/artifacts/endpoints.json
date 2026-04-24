@@ -1,0 +1,621 @@
+{
+  "cccccccc-0001-0000-0000-000000000000": {
+    "id": "cccccccc-0001-0000-0000-000000000000",
+    "name": "register_project",
+    "kind": "action",
+    "description": "Register a Forge project by its root path, creating it if it doesn't exist",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "root_path",
+        "type": "string",
+        "required": true,
+        "description": "Absolute path to the project directory (created if it doesn't exist)",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0001-0000-0000-000000000000"
+  },
+  "cccccccc-0002-0000-0000-000000000000": {
+    "id": "cccccccc-0002-0000-0000-000000000000",
+    "name": "unregister_project",
+    "kind": "action",
+    "description": "Remove a project and all its associated records",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0002-0000-0000-000000000000"
+  },
+  "cccccccc-0003-0000-0000-000000000000": {
+    "id": "cccccccc-0003-0000-0000-000000000000",
+    "name": "set_active_project",
+    "kind": "action",
+    "description": "Switch the active project shown in the UI",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0003-0000-0000-000000000000"
+  },
+  "cccccccc-0004-0000-0000-000000000000": {
+    "id": "cccccccc-0004-0000-0000-000000000000",
+    "name": "sync_project",
+    "kind": "action",
+    "description": "Re-read forge.toml and artifact files to refresh project metadata",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0004-0000-0000-000000000000"
+  },
+  "cccccccc-0011-0000-0000-000000000000": {
+    "id": "cccccccc-0011-0000-0000-000000000000",
+    "name": "create_pipeline",
+    "kind": "action",
+    "description": "Scaffold a new pipeline file and register it in forge.toml",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "pipeline_name",
+        "type": "string",
+        "required": true,
+        "description": "Snake_case name for the pipeline (e.g. 'ingest_raw')",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0011-0000-0000-000000000000"
+  },
+  "cccccccc-0015-0000-0000-000000000000": {
+    "id": "cccccccc-0015-0000-0000-000000000000",
+    "name": "list_project_datasets",
+    "kind": "action",
+    "description": "List all datasets registered in the active managed project",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0015-0000-0000-000000000000"
+  },
+  "cccccccc-0025-0000-0000-000000000000": {
+    "id": "cccccccc-0025-0000-0000-000000000000",
+    "name": "preview_dataset",
+    "kind": "action",
+    "description": "Return the first N rows of a dataset as column/row arrays for preview",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "dataset_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0025-0000-0000-000000000000"
+  },
+  "cccccccc-0027-0000-0000-000000000000": {
+    "id": "cccccccc-0027-0000-0000-000000000000",
+    "name": "preview_model",
+    "kind": "action",
+    "description": "Return the first N rows of a model's snapshot dataset for preview",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "model_name",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "limit",
+        "type": "integer",
+        "required": false,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0027-0000-0000-000000000000"
+  },
+  "cccccccc-0016-0000-0000-000000000000": {
+    "id": "cccccccc-0016-0000-0000-000000000000",
+    "name": "create_model",
+    "kind": "action",
+    "description": "Scaffold a new model file from an existing dataset and register it in forge.toml",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "dataset_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "model_name",
+        "type": "string",
+        "required": true,
+        "description": "PascalCase class name (e.g. 'BitcoinPrice')",
+        "default": null
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "required": false,
+        "description": "snapshot (mutable) or immutable (read-only). Defaults to snapshot.",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0016-0000-0000-000000000000"
+  },
+  "cccccccc-0017-0000-0000-000000000000": {
+    "id": "cccccccc-0017-0000-0000-000000000000",
+    "name": "open_in_vscode",
+    "kind": "action",
+    "description": "Open a file in VS Code, reusing the existing window if one is open",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "folder_path",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "file_path",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0017-0000-0000-000000000000"
+  },
+  "cccccccc-0018-0000-0000-000000000000": {
+    "id": "cccccccc-0018-0000-0000-000000000000",
+    "name": "create_endpoint",
+    "kind": "action",
+    "description": "Scaffold a new endpoint function and register its repo in forge.toml",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "endpoint_name",
+        "type": "string",
+        "required": true,
+        "description": "Snake_case function name (e.g. 'get_summary')",
+        "default": null
+      },
+      {
+        "name": "repo_name",
+        "type": "string",
+        "required": true,
+        "description": "Endpoint repo to add to (existing name or new snake_case name)",
+        "default": null
+      },
+      {
+        "name": "kind",
+        "type": "string",
+        "required": false,
+        "description": "action | streaming | computed_attribute (default: action)",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0018-0000-0000-000000000000"
+  },
+  "cccccccc-0020-0000-0000-000000000000": {
+    "id": "cccccccc-0020-0000-0000-000000000000",
+    "name": "create_app",
+    "kind": "action",
+    "description": "Scaffold a new Vite+React app in the project's apps/ directory and register it in forge.toml",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "app_name",
+        "type": "string",
+        "required": true,
+        "description": "kebab-case app name (e.g. 'my-dashboard')",
+        "default": null
+      },
+      {
+        "name": "port",
+        "type": "string",
+        "required": false,
+        "description": "Dev server port (default: 5177)",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0020-0000-0000-000000000000"
+  },
+  "cccccccc-0021-0000-0000-000000000000": {
+    "id": "cccccccc-0021-0000-0000-000000000000",
+    "name": "run_app",
+    "kind": "action",
+    "description": "Start an app's Vite dev server as a background process",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "app_name",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0021-0000-0000-000000000000"
+  },
+  "cccccccc-0024-0000-0000-000000000000": {
+    "id": "cccccccc-0024-0000-0000-000000000000",
+    "name": "ping_app",
+    "kind": "action",
+    "description": "Check whether an app's dev server is accepting connections",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "app_name",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0024-0000-0000-000000000000"
+  },
+  "cccccccc-0022-0000-0000-000000000000": {
+    "id": "cccccccc-0022-0000-0000-000000000000",
+    "name": "stop_app",
+    "kind": "action",
+    "description": "Stop a running app's Vite dev server by killing the process on its port",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "app_name",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0022-0000-0000-000000000000"
+  },
+  "cccccccc-0023-0000-0000-000000000000": {
+    "id": "cccccccc-0023-0000-0000-000000000000",
+    "name": "open_app",
+    "kind": "action",
+    "description": "Open an app in the default browser",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "app_name",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0023-0000-0000-000000000000"
+  },
+  "cccccccc-0026-0000-0000-000000000000": {
+    "id": "cccccccc-0026-0000-0000-000000000000",
+    "name": "call_project_endpoint",
+    "kind": "action",
+    "description": "Proxy a test call to the active project's backend endpoint",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "Active project ID",
+        "default": null
+      },
+      {
+        "name": "endpoint_id",
+        "type": "string",
+        "required": true,
+        "description": "Target endpoint UUID",
+        "default": null
+      },
+      {
+        "name": "payload_json",
+        "type": "string",
+        "required": true,
+        "description": "JSON payload string",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0026-0000-0000-000000000000"
+  },
+  "cccccccc-0019-0000-0000-000000000000": {
+    "id": "cccccccc-0019-0000-0000-000000000000",
+    "name": "get_docs",
+    "kind": "action",
+    "description": "Return all Forge framework docs as a list of {name, title, content} objects",
+    "repo": "endpoint_repos.project_endpoints",
+    "params": [],
+    "path": "/endpoints/cccccccc-0019-0000-0000-000000000000"
+  },
+  "cccccccc-0005-0000-0000-000000000000": {
+    "id": "cccccccc-0005-0000-0000-000000000000",
+    "name": "run_pipeline",
+    "kind": "streaming",
+    "description": "Run a named pipeline in the active project and stream its output",
+    "repo": "endpoint_repos.build_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "pipeline_name",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0005-0000-0000-000000000000/stream"
+  },
+  "cccccccc-0006-0000-0000-000000000000": {
+    "id": "cccccccc-0006-0000-0000-000000000000",
+    "name": "run_model_build",
+    "kind": "streaming",
+    "description": "Run forge model build and stream detailed schema + data summary per model",
+    "repo": "endpoint_repos.build_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0006-0000-0000-000000000000/stream"
+  },
+  "cccccccc-0007-0000-0000-000000000000": {
+    "id": "cccccccc-0007-0000-0000-000000000000",
+    "name": "run_endpoint_build",
+    "kind": "streaming",
+    "description": "Run forge endpoint build and stream output",
+    "repo": "endpoint_repos.build_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0007-0000-0000-000000000000/stream"
+  },
+  "cccccccc-0008-0000-0000-000000000000": {
+    "id": "cccccccc-0008-0000-0000-000000000000",
+    "name": "pipeline_dag",
+    "kind": "action",
+    "description": "Return DAG nodes and edges for the pipeline visualization",
+    "repo": "endpoint_repos.computed_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": false,
+        "description": "",
+        "default": ""
+      }
+    ],
+    "path": "/endpoints/cccccccc-0008-0000-0000-000000000000"
+  },
+  "cccccccc-0009-0000-0000-000000000000": {
+    "id": "cccccccc-0009-0000-0000-000000000000",
+    "name": "layer_lineage",
+    "kind": "action",
+    "description": "Return layer band data for the lineage visualization",
+    "repo": "endpoint_repos.computed_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": false,
+        "description": "",
+        "default": ""
+      }
+    ],
+    "path": "/endpoints/cccccccc-0009-0000-0000-000000000000"
+  },
+  "cccccccc-0010-0000-0000-000000000000": {
+    "id": "cccccccc-0010-0000-0000-000000000000",
+    "name": "project_health",
+    "kind": "action",
+    "description": "Return health metrics for a project",
+    "repo": "endpoint_repos.computed_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": false,
+        "description": "",
+        "default": ""
+      }
+    ],
+    "path": "/endpoints/cccccccc-0010-0000-0000-000000000000"
+  },
+  "cccccccc-0012-0000-0000-000000000000": {
+    "id": "cccccccc-0012-0000-0000-000000000000",
+    "name": "sync_files",
+    "kind": "action",
+    "description": "Reconcile the files/ directory with ProjectFile records",
+    "repo": "endpoint_repos.file_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0012-0000-0000-000000000000"
+  },
+  "cccccccc-0013-0000-0000-000000000000": {
+    "id": "cccccccc-0013-0000-0000-000000000000",
+    "name": "upload_file",
+    "kind": "action",
+    "description": "Upload a file to the project's files/ directory",
+    "repo": "endpoint_repos.file_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "filename",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "content_b64",
+        "type": "string",
+        "required": true,
+        "description": "Base64-encoded file content",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0013-0000-0000-000000000000"
+  },
+  "cccccccc-0014-0000-0000-000000000000": {
+    "id": "cccccccc-0014-0000-0000-000000000000",
+    "name": "remove_file",
+    "kind": "action",
+    "description": "Remove a file from the project's files/ directory and delete its record",
+    "repo": "endpoint_repos.file_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "file_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0014-0000-0000-000000000000"
+  }
+}

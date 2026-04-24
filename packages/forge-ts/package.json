@@ -1,7 +1,7 @@
 {
   "name": "@forge-suite/ts",
-  "version": "0.1.32",
-  "description": "Forge widget library and runtime \u2014 TypeScript/React",
+  "version": "0.1.35",
+  "description": "Forge widget library and runtime \u00e2\u20ac\u201d TypeScript/React",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build && cp src/forge.css dist/forge.css",
+    "build": "vite build && node -e \"require('fs').copyFileSync('src/forge.css','dist/forge.css')\"",
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit"
   },

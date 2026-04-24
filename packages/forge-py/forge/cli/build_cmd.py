@@ -38,7 +38,7 @@ def build_cmd(app: str | None) -> None:
 
         pkg_json = app_dir / "package.json"
         if not pkg_json.exists():
-            console.print(f"[yellow]⚠[/yellow] [{a.name}] no package.json, skipping")
+            console.print(f"[yellow][!][/yellow] [{a.name}] no package.json, skipping")
             continue
 
         console.print(f"[dim]Building[/dim] {a.name}…")

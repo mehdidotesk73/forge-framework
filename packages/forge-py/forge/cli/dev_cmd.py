@@ -116,7 +116,7 @@ def _ensure_forge_ts_linked(app_dir: Path, project_root: Path) -> None:
 
     if forge_ts_src is None:
         console.print(
-            "[yellow]⚠[/yellow] @forge-suite/ts not found — "
+            "[yellow][![/yellow] @forge-suite/ts not found — "
             "run `npm install` in the app directory after publishing to npm."
         )
         return
@@ -145,7 +145,7 @@ def _check_version_mismatch(py_version: str, ts_version: str, root: Path) -> Non
         installed_ts = json.loads(ts_pkg_json.read_text()).get("version", "unknown")
         if installed_ts != ts_version:
             console.print(
-                f"[yellow]⚠ Version mismatch: Python={py_version}, "
+                f"[yellow][!] Version mismatch: Python={py_version}, "
                 f"TypeScript={installed_ts} (expected {ts_version}). "
                 f"Run `forge upgrade` to synchronize.[/yellow]"
             )

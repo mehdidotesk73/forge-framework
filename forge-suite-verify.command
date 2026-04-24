@@ -20,7 +20,11 @@ if [ ! -d "$VENV" ]; then
   exit 1
 fi
 
-source "$VENV/bin/activate"
+if [ -f "$VENV/Scripts/activate" ]; then
+  source "$VENV/Scripts/activate"   # Windows / Git Bash
+else
+  source "$VENV/bin/activate"
+fi
 
 if ! python -c "import forge_suite" 2>/dev/null; then
   echo "✗ forge-suite not installed. Run setup.command first."
