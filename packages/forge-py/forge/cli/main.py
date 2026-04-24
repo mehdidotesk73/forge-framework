@@ -22,6 +22,7 @@ from forge.cli.dev_cmd import dev_group
 from forge.cli.upgrade_cmd import upgrade_cmd
 from forge.cli.build_cmd import build_cmd
 from forge.cli.export_cmd import export_cmd
+from forge.cli.module_cmd import module_group
 
 cli.add_command(init_cmd, name="init")
 cli.add_command(dataset_group, name="dataset")
@@ -33,6 +34,7 @@ cli.add_command(dev_group, name="dev")
 cli.add_command(upgrade_cmd, name="upgrade")
 cli.add_command(build_cmd, name="build")
 cli.add_command(export_cmd, name="export")
+cli.add_command(module_group, name="module")
 
 
 @cli.command()

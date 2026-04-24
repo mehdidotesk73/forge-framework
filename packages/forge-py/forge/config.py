@@ -49,6 +49,12 @@ class AppConfig(BaseModel):
     port: int | None = None
 
 
+class ForgeModuleConfig(BaseModel):
+    name: str
+    package: str
+    config_var: str  # "dotted.module.path:ATTR_NAME"
+
+
 class AuthConfig(BaseModel):
     provider: str = "none"  # "none" | future: "clerk", "supabase", ...
     options: dict[str, str] = Field(default_factory=dict)
@@ -68,6 +74,7 @@ class ProjectConfig(BaseModel):
     models: list[ModelConfig] = Field(default_factory=list)
     endpoint_repos: list[EndpointRepoConfig] = Field(default_factory=list)
     apps: list[AppConfig] = Field(default_factory=list)
+    forge_modules: list[ForgeModuleConfig] = Field(default_factory=list)
     auth: AuthConfig = Field(default_factory=AuthConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
 
@@ -158,9 +165,44 @@ def load_config(project_root: Path | None = None) -> tuple[ProjectConfig, Path]:
         models=[ModelConfig(**_normalize_model(m)) for m in raw.get("models", [])],
         endpoint_repos=[EndpointRepoConfig(**_normalize_endpoint_repo(r)) for r in raw.get("endpoint_repos", [])],
         apps=[AppConfig(**_normalize_app(a)) for a in raw.get("apps", [])],
+        forge_modules=[
+            ForgeModuleConfig(**m) for m in raw.get("forge_modules", [])
+        ],
         auth=AuthConfig(**raw.get("auth", {})),
         database=DatabaseConfig(**raw.get("database", {})),
     )
+
+    # Merge module entries into config (warn on import failure; never crash)
+    import importlib as _importlib
+    import warnings as _warnings
+    for _mod_cfg in config.forge_modules:
+        _module_path, _attr = _mod_cfg.config_var.split(":")
+        try:
+            _m = _importlib.import_module(_module_path)
+            _mc = getattr(_m, _attr)
+        except Exception as _exc:
+            _warnings.warn(
+                f"Could not load module config '{_mod_cfg.config_var}': {_exc}"
+            )
+            continue
+        for _entry in _mc.models:
+            config.models.append(ModelConfig(
+                class_name=_entry.class_name,
+                module=_entry.module,
+                mode=_entry.mode,
+                display_name=_entry.display_name,
+            ))
+        for _entry in _mc.endpoint_repos:
+            config.endpoint_repos.append(EndpointRepoConfig(module=_entry.module))
+        for _entry in _mc.pipelines:
+            config.pipelines.append(PipelineConfig(
+                id=_entry.id,
+                display_name=_entry.display_name,
+                module=_entry.module,
+                function=_entry.function,
+                schedule=_entry.schedule,
+            ))
+
     return config, root
 
 
@@ -192,6 +234,8 @@ def save_config(config: ProjectConfig, root: Path) -> None:
             {k: v for k, v in a.model_dump().items() if v is not None}
             for a in config.apps
         ]
+    if config.forge_modules:
+        data["forge_modules"] = [m.model_dump() for m in config.forge_modules]
 
     with open(root / "forge.toml", "wb") as f:
         tomli_w.dump(data, f)

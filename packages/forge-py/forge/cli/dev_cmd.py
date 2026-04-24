@@ -32,7 +32,10 @@ def dev_serve(app: str | None, host: str, port: int, reload: bool) -> None:
     from forge.pipeline.runner import PipelineRunner
     from forge.scheduler.scheduler import ForgeScheduler
     from forge.server.app import create_app, load_endpoint_modules, load_model_modules
-    from forge.version import __version__, TS_VERSION
+    from forge.server.app import (
+        create_app, load_endpoint_modules, load_model_modules,
+        bootstrap_module_datasets,
+    )
 
     # Version mismatch check
     _check_version_mismatch(__version__, TS_VERSION, find_project_root())
@@ -46,6 +49,8 @@ def dev_serve(app: str | None, host: str, port: int, reload: bool) -> None:
     load_model_modules(config, root)
     # Load endpoint modules so decorators register
     load_endpoint_modules(config, root)
+    # Bootstrap module datasets (idempotent — safe on every startup)
+    bootstrap_module_datasets(config, engine)
 
     scheduler = ForgeScheduler(config, runner, engine)
     api = create_app(config, root, engine, runner, scheduler)

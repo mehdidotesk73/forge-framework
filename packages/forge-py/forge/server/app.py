@@ -236,14 +236,50 @@ def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
         sys.path.insert(0, endpoint_repos_str)
 
     for repo_cfg in config.endpoint_repos:
-        repo_path = (root / repo_cfg.module.replace(".", "/")).resolve()
+        local_path = root / repo_cfg.module.replace(".", "/")
+        repo_path = local_path.resolve()
+        if not repo_path.exists():
+            # Module may be a pip-installed package; locate via importlib
+            import importlib.util
+            spec = importlib.util.find_spec(repo_cfg.module)
+            if spec and spec.submodule_search_locations:
+                repo_path = Path(list(spec.submodule_search_locations)[0])
+            else:
+                log.warning("Endpoint repo module not found: %s", repo_cfg.module)
+                continue
+        # For project-local repos base_path = root; for site-packages repos
+        # base_path is one level above the package dir so module_name is correct.
+        base_path = root if local_path.exists() else repo_path.parent
         _SKIP = {"setup.py", "conftest.py"}
         for py_file in repo_path.rglob("*.py"):
             if py_file.name.startswith("_") or py_file.name in _SKIP:
                 continue
-            rel = py_file.relative_to(root)
+            rel = py_file.relative_to(base_path)
             module_name = str(rel.with_suffix("")).replace("/", ".").replace("\\", ".")
             try:
                 importlib.import_module(module_name)
             except Exception as exc:
                 log.warning("Could not import endpoint module %s: %s", module_name, exc)
+
+
+def bootstrap_module_datasets(config: ProjectConfig, engine: StorageEngine) -> None:
+    """Ensure each module's declared datasets exist in the storage engine.
+
+    Safe to call on every startup — idempotent, skips already-present datasets.
+    """
+    import importlib as _importlib
+    import pandas as pd
+    for mod_cfg in config.forge_modules:
+        module_path, attr = mod_cfg.config_var.split(":")
+        try:
+            m = _importlib.import_module(module_path)
+            mc = getattr(m, attr)
+        except Exception:
+            continue
+        for dataset_id in mc.dataset_ids.values():
+            if engine.get_dataset(dataset_id) is None:
+                engine.write_dataset(dataset_id, pd.DataFrame())
+                log.info(
+                    "Bootstrapped module dataset %s for module %s",
+                    dataset_id, mc.name,
+                )
