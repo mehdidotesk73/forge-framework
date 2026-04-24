@@ -1,0 +1,10 @@
+{
+  "name": "PipelineRun",
+  "mode": "snapshot",
+  "backing_dataset_id": "3a7b282a-80a5-403b-b599-24dea2350502",
+  "backing_dataset_name": "3a7b282a-80a5-403b-b599-24dea2350502",
+  "snapshot_dataset_id": "3553e9ce-fb9d-48ef-b51e-921aa584c595",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:33.240320+00:00"
+}

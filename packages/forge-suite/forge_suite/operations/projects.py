@@ -102,9 +102,12 @@ def register_project(root_path: str, suite_root: Path | None = None) -> dict:
     root = Path(root_path).resolve()
     toml_path = root / "forge.toml"
     created = False
+    venv_result: dict = {}
     if not toml_path.exists():
         create_project(root, suite_root=suite_root)
         created = True
+        from forge.operations.projects import bootstrap_project_venv
+        venv_result = bootstrap_project_venv(root)
     else:
         write_ide_config(root, suite_root=suite_root)
 
@@ -138,7 +141,7 @@ def register_project(root_path: str, suite_root: Path | None = None) -> dict:
 
     sync_project_records(project_id, root, cfg)
 
-    return {"project_id": project_id, "name": proj_name, "root_path": str(root), "created": created}
+    return {"project_id": project_id, "name": proj_name, "root_path": str(root), "created": created, "venv": venv_result}
 
 
 def unregister_project(project_id: str) -> dict:

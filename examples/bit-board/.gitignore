@@ -1,4 +1,18 @@
-.forge/
+# Forge runtime data (local only)
+.forge/data/
+.forge/*.duckdb
+.forge/*.duckdb.wal
+# Forge Suite machine-local files
+.forge-suite/
+# Python
+.venv/
+__pycache__/
+*.pyc
+# Node
+node_modules/
+dist/
+# Environment
+.env
 __pycache__/
 *.pyc
 node_modules/

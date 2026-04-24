@@ -39,11 +39,24 @@ forge_version = "{forge_version}"
 """
 
 _GITIGNORE = """\
-.forge/
+# Forge runtime data (local only — excluded from version control)
+.forge/data/
+.forge/*.duckdb
+.forge/*.duckdb.wal
+
+# Forge Suite machine-local files (created by forge-suite, never committed)
+.forge-suite/
+
+# Python
+.venv/
 __pycache__/
 *.pyc
+
+# Node
 node_modules/
 dist/
+
+# Environment
 .env
 """
 
@@ -92,6 +105,7 @@ def init_cmd(project_name: str, path: str) -> None:
         project_dir / ".forge" / "artifacts",
         project_dir / ".forge" / "generated" / "python",
         project_dir / ".forge" / "generated" / "typescript",
+        project_dir / ".forge-suite",
         project_dir / "pipelines",
         project_dir / "models",
         project_dir / "endpoint_repos",
@@ -104,8 +118,13 @@ def init_cmd(project_name: str, path: str) -> None:
     # Write forge.toml
     (project_dir / "forge.toml").write_text(_FORGE_TOML.format(name=project_name, forge_version=__version__))
 
-    # Write .gitignore
+    # Write .gitignore, requirements.txt, setup.sh
     (project_dir / ".gitignore").write_text(_GITIGNORE)
+    from forge.operations.projects import _REQUIREMENTS_TXT, _SETUP_SH, _FORGE_DIR_README, _FORGE_SUITE_DIR_README
+    (project_dir / "requirements.txt").write_text(_REQUIREMENTS_TXT.format(version=__version__))
+    (project_dir / "setup.sh").write_text(_SETUP_SH)
+    (project_dir / ".forge" / "README.md").write_text(_FORGE_DIR_README)
+    (project_dir / ".forge-suite" / "README.md").write_text(_FORGE_SUITE_DIR_README)
 
     # Write placeholder __init__ files
     (project_dir / "pipelines" / "__init__.py").write_text("")
@@ -123,8 +142,18 @@ def init_cmd(project_name: str, path: str) -> None:
 
     console.print(f"[green]✓[/green] Created Forge project [bold]{project_name}[/bold] at {project_dir}")
     console.print()
+    console.print("[dim]Setting up Python environment...[/dim]")
+    from forge.operations.projects import bootstrap_project_venv
+    venv_result = bootstrap_project_venv(project_dir)
+    if venv_result.get("installed"):
+        console.print("[green]✓[/green] Installed forge-framework into .venv")
+    else:
+        console.print(f"[yellow]![/yellow] Venv setup incomplete: {venv_result.get('error', 'unknown error')}")
+        console.print("  Run [bold]bash setup.sh[/bold] to complete setup manually.")
+    console.print()
     console.print("[dim]Next steps:[/dim]")
     console.print(f"  cd {project_name}")
+    console.print("  source .venv/bin/activate   # (Windows: .venv\\Scripts\\activate)")
     console.print("  forge dataset load data/my_file.csv --name my_data")
     console.print("  forge pipeline run my_pipeline")
     console.print("  forge model build")

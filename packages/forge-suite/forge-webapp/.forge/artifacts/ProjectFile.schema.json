@@ -1,0 +1,10 @@
+{
+  "name": "ProjectFile",
+  "mode": "snapshot",
+  "backing_dataset_id": "e1d9f484-1fd9-47e6-9e5a-db6de289f9d6",
+  "backing_dataset_name": "e1d9f484-1fd9-47e6-9e5a-db6de289f9d6",
+  "snapshot_dataset_id": "334db87c-4140-4e97-ba66-6a3b184c0fbf",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:34.445239+00:00"
+}

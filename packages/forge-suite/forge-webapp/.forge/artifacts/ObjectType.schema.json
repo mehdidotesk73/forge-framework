@@ -1,0 +1,10 @@
+{
+  "name": "ObjectType",
+  "mode": "snapshot",
+  "backing_dataset_id": "5d31be44-da94-4eb4-9f55-31b285e081db",
+  "backing_dataset_name": "5d31be44-da94-4eb4-9f55-31b285e081db",
+  "snapshot_dataset_id": "65466bca-44b8-40f8-b37a-a9a3cdf06358",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T00:24:33.483447+00:00"
+}

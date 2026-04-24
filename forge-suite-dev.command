@@ -17,7 +17,11 @@ if [ ! -d "$VENV" ]; then
   exit 1
 fi
 
-source "$VENV/bin/activate"
+if [ -f "$VENV/Scripts/activate" ]; then
+  source "$VENV/Scripts/activate"   # Windows / Git Bash
+else
+  source "$VENV/bin/activate"
+fi
 
 # Start backend API on :7999 (no static frontend)
 forge-suite serve --dev &
@@ -33,7 +37,14 @@ VITE_PID=$!
 
 # Give Vite a moment to start, then open the browser
 sleep 3
-open "http://localhost:5174" 2>/dev/null || true
+# open browser cross-platform
+if command -v open &>/dev/null; then
+  open "http://localhost:5174"
+elif command -v xdg-open &>/dev/null; then
+  xdg-open "http://localhost:5174"
+elif command -v start &>/dev/null; then
+  start "http://localhost:5174"
+fi
 
 echo ""
 echo "Forge Suite dev mode running:"

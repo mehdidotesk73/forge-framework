@@ -13,7 +13,7 @@ def _find_free_port() -> int:
 
 
 def _run_ports_path(root: Path) -> Path:
-    return root / ".forge" / "run_ports.json"
+    return root / ".forge-suite" / "run_ports.json"
 
 
 def _load_run_ports(root: Path) -> dict:
@@ -128,8 +128,8 @@ def _Path_exists(p: str) -> bool:
 
 
 def _ensure_suite_root_file(app_dir: Path) -> None:
-    """Write .forge/suite_root into the app dir so vite.config.ts can resolve @forge-suite/ts."""
-    suite_root_file = app_dir / ".forge" / "suite_root"
+    """Write .forge-suite/suite_root into the app dir so vite.config.ts can resolve @forge-suite/ts."""
+    suite_root_file = app_dir / ".forge-suite" / "suite_root"
     if suite_root_file.exists():
         return
     from forge.operations.projects import resolve_suite_root
