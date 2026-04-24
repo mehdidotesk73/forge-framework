@@ -293,6 +293,7 @@ export function Container({
         display: "flex",
         flexDirection: titleEl ? "column" : direction,
         justifyContent: titleEl ? undefined : toJustifyContent(alignItems),
+        padding,
         ...bgStyle,
         ...sizeStyle,
         ...styleProp,
@@ -304,6 +305,7 @@ export function Container({
           display: "flex",
           flexDirection: direction,
           flex: 1,
+          gap: separator ? 0 : gap,
           justifyContent: toJustifyContent(alignItems),
         }}
       >
@@ -412,7 +414,7 @@ export function Navbar({
           {items.map((item, i) => (
             <button
               key={item.id ?? i}
-              type='button'
+              type="button"
               onClick={item.onClick}
               style={{
                 display: "flex",
@@ -453,13 +455,13 @@ export function Navbar({
       className={`forge-navbar forge-navbar-${size} ${className}`}
       style={styleProp}
     >
-      {title && <div className='forge-navbar-title'>{title}</div>}
-      <div className='forge-navbar-items'>
+      {title && <div className="forge-navbar-title">{title}</div>}
+      <div className="forge-navbar-items">
         {items.map((item, i) =>
           item.onClick ? (
             <button
               key={item.id ?? i}
-              type='button'
+              type="button"
               className={`forge-navbar-item ${item.active ? "forge-navbar-item-active" : ""}`}
               onClick={item.onClick}
             >
@@ -476,7 +478,7 @@ export function Navbar({
           ),
         )}
       </div>
-      {rightContent && <div className='forge-navbar-right'>{rightContent}</div>}
+      {rightContent && <div className="forge-navbar-right">{rightContent}</div>}
     </nav>
   );
 }
@@ -514,20 +516,20 @@ export function Modal({
 
   return createPortal(
     <div
-      className='forge-modal-overlay'
+      className="forge-modal-overlay"
       ref={overlayRef}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div className={`forge-modal forge-modal-${size} ${className}`}>
-        <div className='forge-modal-header'>
-          {title && <h2 className='forge-modal-title'>{title}</h2>}
-          <button type='button' className='forge-modal-close' onClick={onClose}>
+        <div className="forge-modal-header">
+          {title && <h2 className="forge-modal-title">{title}</h2>}
+          <button type="button" className="forge-modal-close" onClick={onClose}>
             ✕
           </button>
         </div>
-        <div className='forge-modal-body'>{children}</div>
+        <div className="forge-modal-body">{children}</div>
       </div>
     </div>,
     document.body,

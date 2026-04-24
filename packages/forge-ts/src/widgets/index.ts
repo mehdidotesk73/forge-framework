@@ -33,7 +33,15 @@ export { ButtonGroup } from "./ButtonGroup.js";
 export type { ButtonGroupProps, ButtonConfig } from "./ButtonGroup.js";
 
 export { Container, Navbar, Modal } from "./layout.js";
-export type { ContainerProps, NavbarProps, ModalProps, NavItem } from "./layout.js";
+export type {
+  ContainerProps,
+  NavbarProps,
+  ModalProps,
+  NavItem,
+} from "./layout.js";
 
 export { LogPanel } from "./LogPanel.js";
 export type { LogPanelProps, LogLine } from "./LogPanel.js";
+
+export { Markdown } from "./Markdown.js";
+export type { MarkdownProps } from "./Markdown.js";

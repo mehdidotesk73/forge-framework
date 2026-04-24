@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { id: "model", label: "Model", icon: "⬡" },
   { id: "endpoints", label: "Endpoints", icon: "⚡" },
   { id: "apps", label: "Apps", icon: "▣" },
+  { id: "modules", label: "Modules", icon: "⬡" },
   { id: "datasets", label: "Datasets", icon: "⊞" },
   { id: "files", label: "Files", icon: "◻" },
 ] as const;
@@ -125,8 +126,8 @@ export function Sidebar({ activePage, onNavigate }: Props) {
   return (
     <>
       <Container
-        direction='column'
-        size='220px'
+        direction="column"
+        size="220px"
         separator
         style={{
           minHeight: "100vh",
@@ -136,22 +137,22 @@ export function Sidebar({ activePage, onNavigate }: Props) {
         startChildren={
           <>
             {/* Logo */}
-            <Container direction='row' gap={8} padding='18px 16px 14px'>
+            <Container direction="row" gap={8} padding="18px 16px 14px">
               <span style={{ fontSize: 18, color: "var(--accent)" }}>◈</span>
               <span style={{ fontWeight: 700, fontSize: 15 }}>Forge</span>
             </Container>
 
             {/* Project section */}
             <Container
-              direction='column'
-              padding='0 16px 8px'
-              title='Project'
-              titleSize='sm'
+              direction="column"
+              padding="0 16px 8px"
+              title="Project"
+              titleSize="sm"
             >
               {projects.length === 0 ? null : (
                 <Navbar
-                  orientation='vertical'
-                  size='sm'
+                  orientation="vertical"
+                  size="sm"
                   items={projects.map((p) => ({
                     id: p.id,
                     label: p.name,
@@ -161,14 +162,14 @@ export function Sidebar({ activePage, onNavigate }: Props) {
                 />
               )}
               {showRegister ? (
-                <Container direction='column' gap={4} padding='4px 12px 0'>
+                <Container direction="column" gap={4} padding="4px 12px 0">
                   <TextInput
                     value={registerPath}
                     onChange={(v) => {
                       setRegisterPath(v);
                       setRegisterMsg(null);
                     }}
-                    placeholder='Absolute path (created if new)'
+                    placeholder="Absolute path (created if new)"
                   />
                   {registerMsg && (
                     <div
@@ -184,7 +185,7 @@ export function Sidebar({ activePage, onNavigate }: Props) {
                     </div>
                   )}
                   <ButtonGroup
-                    size='sm'
+                    size="sm"
                     buttons={[
                       {
                         label: register.isPending ? "…" : "Create / Register",
@@ -209,9 +210,9 @@ export function Sidebar({ activePage, onNavigate }: Props) {
                   />
                 </Container>
               ) : (
-                <Container padding='4px 12px 0'>
+                <Container padding="4px 12px 0">
                   <ButtonGroup
-                    size='sm'
+                    size="sm"
                     buttons={[
                       {
                         label: "+ Add project",
@@ -228,7 +229,7 @@ export function Sidebar({ activePage, onNavigate }: Props) {
 
             {/* Main nav */}
             <Navbar
-              orientation='vertical'
+              orientation="vertical"
               items={NAV_ITEMS.map((item) => ({
                 id: item.id,
                 label: item.label,
@@ -245,9 +246,9 @@ export function Sidebar({ activePage, onNavigate }: Props) {
             {/* Active project label */}
             {active && (
               <Container
-                direction='row'
+                direction="row"
                 startChildren={
-                  <Container direction='column' gap={6} padding='10px 16px'>
+                  <Container direction="column" gap={6} padding="10px 16px">
                     <span
                       style={{
                         color: "var(--accent-green)",
@@ -272,7 +273,7 @@ export function Sidebar({ activePage, onNavigate }: Props) {
                 }
                 endChildren={
                   <ButtonGroup
-                    size='sm'
+                    size="sm"
                     buttons={[
                       {
                         label: syncing ? "Syncing…" : "↻ Sync",
@@ -287,9 +288,9 @@ export function Sidebar({ activePage, onNavigate }: Props) {
             )}
 
             {/* Utility buttons */}
-            <Container padding='10px 16px'>
+            <Container padding="10px 16px">
               <ButtonGroup
-                size='sm'
+                size="sm"
                 buttons={[
                   {
                     label: "# UUID",
@@ -324,8 +325,8 @@ export function Sidebar({ activePage, onNavigate }: Props) {
       <Modal
         open={docsOpen}
         onClose={() => setDocsOpen(false)}
-        title='Forge Docs'
-        size='lg'
+        title="Forge Docs"
+        size="lg"
       >
         {docs.length === 0 ? (
           <Container padding={24}>
@@ -335,14 +336,14 @@ export function Sidebar({ activePage, onNavigate }: Props) {
           </Container>
         ) : (
           <Container
-            direction='row'
+            direction="row"
             style={{ flex: 1, overflow: "hidden", height: "100%" }}
           >
             <Container
-              direction='column'
-              size='160px'
+              direction="column"
+              size="160px"
               gap={2}
-              padding='10px 8px'
+              padding="10px 8px"
               style={{ borderRight: "1px solid var(--border)" }}
             >
               {docs.map((doc, i) => (
@@ -371,7 +372,7 @@ export function Sidebar({ activePage, onNavigate }: Props) {
             </Container>
             <Container
               size={1}
-              padding='20px 24px'
+              padding="20px 24px"
               style={{ overflow: "auto" }}
             >
               {docs[docsTab] && (
@@ -398,10 +399,10 @@ export function Sidebar({ activePage, onNavigate }: Props) {
       <Modal
         open={!!uuidModal}
         onClose={() => setUuidModal(null)}
-        title='Generated UUID'
-        size='sm'
+        title="Generated UUID"
+        size="sm"
       >
-        <Container direction='column' gap={16}>
+        <Container direction="column" gap={16}>
           <code
             style={{
               fontSize: 13,
@@ -415,7 +416,7 @@ export function Sidebar({ activePage, onNavigate }: Props) {
             {uuidModal}
           </code>
           <ButtonGroup
-            size='sm'
+            size="sm"
             buttons={[
               {
                 label: copied ? "Copied!" : "Copy to clipboard",

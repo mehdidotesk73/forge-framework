@@ -224,6 +224,8 @@ def load_model_modules(config: ProjectConfig, root: Path) -> None:
 
 def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
     """Import endpoint repo modules so decorators register their endpoints."""
+    import importlib.util as _importlib_util
+
     # Project root must be on sys.path so endpoints can import model classes
     root_str = str(root)
     if root_str not in sys.path:
@@ -240,8 +242,7 @@ def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
         repo_path = local_path.resolve()
         if not repo_path.exists():
             # Module may be a pip-installed package; locate via importlib
-            import importlib.util
-            spec = importlib.util.find_spec(repo_cfg.module)
+            spec = _importlib_util.find_spec(repo_cfg.module)
             if spec and spec.submodule_search_locations:
                 repo_path = Path(list(spec.submodule_search_locations)[0])
             else:

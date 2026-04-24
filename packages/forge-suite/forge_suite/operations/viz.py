@@ -123,6 +123,34 @@ def project_health(project_id: str = "") -> dict:
     if failed_runs:
         status = "warn"
 
+    # Read forge_modules from project's forge.toml
+    modules: list[dict] = []
+    toml_path = root / "forge.toml"
+    if toml_path.exists():
+        try:
+            import sys as _sys
+            if _sys.version_info >= (3, 11):
+                import tomllib as _tomllib
+            else:
+                import tomli as _tomllib  # type: ignore[no-redef]
+            with open(toml_path, "rb") as _f:
+                _raw = _tomllib.load(_f)
+            for _m in _raw.get("forge_modules", []):
+                _version = "unknown"
+                try:
+                    import importlib.metadata as _meta
+                    _version = _meta.version(_m.get("package", ""))
+                except Exception:
+                    pass
+                modules.append({
+                    "name": _m.get("name", ""),
+                    "package": _m.get("package", ""),
+                    "version": _version,
+                    "config_var": _m.get("config_var", ""),
+                })
+        except Exception:
+            pass
+
     return {
         "status": status,
         "project_id": project_id,
@@ -136,4 +164,5 @@ def project_health(project_id: str = "") -> dict:
         "run_count": len(runs),
         "last_run": last_run,
         "failed_runs": len(failed_runs),
+        "modules": modules,
     }

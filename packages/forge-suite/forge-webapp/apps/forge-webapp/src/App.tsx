@@ -7,8 +7,17 @@ import { EndpointsPage } from "./pages/EndpointsPage.js";
 import { AppsPage } from "./pages/AppsPage.js";
 import { FilesPage } from "./pages/FilesPage.js";
 import { DatasetsPage } from "./pages/DatasetsPage.js";
+import { ModulesPage } from "./pages/ModulesPage.js";
 
-export type Page = "overview" | "pipelines" | "model" | "endpoints" | "apps" | "files" | "datasets";
+export type Page =
+  | "overview"
+  | "pipelines"
+  | "model"
+  | "endpoints"
+  | "apps"
+  | "modules"
+  | "files"
+  | "datasets";
 
 export function App() {
   const [page, setPage] = useState<Page>("overview");
@@ -22,6 +31,7 @@ export function App() {
         {page === "model" && <ModelPage />}
         {page === "endpoints" && <EndpointsPage />}
         {page === "apps" && <AppsPage />}
+        {page === "modules" && <ModulesPage />}
         {page === "files" && <FilesPage />}
         {page === "datasets" && <DatasetsPage />}
       </main>
