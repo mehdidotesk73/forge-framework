@@ -104,18 +104,31 @@ if [[ -z "$BUMP" && -z "$EXPLICIT_VERSION" && "$FROM_PHASE" -eq 1 ]]; then
   exit 1
 fi
 
-# ── Auto-activate repo venv if none is active ─────────────────────────────────
-if [[ -z "${VIRTUAL_ENV:-}" ]] && [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
-  echo "  (activating $REPO_ROOT/.venv)"
-  # shellcheck source=/dev/null
-  source "$REPO_ROOT/.venv/bin/activate"
+# ── Auto-activate repo venv if none is active (Mac: bin/, Windows: Scripts/) ──
+if [[ -z "${VIRTUAL_ENV:-}" ]]; then
+  if [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
+    echo "  (activating $REPO_ROOT/.venv)"
+    source "$REPO_ROOT/.venv/bin/activate"
+  elif [[ -f "$REPO_ROOT/.venv/Scripts/activate" ]]; then
+    echo "  (activating $REPO_ROOT/.venv [Windows])"
+    source "$REPO_ROOT/.venv/Scripts/activate"
+  fi
 fi
 
-# ── Detect Python + Twine ─────────────────────────────────────────────────────
-PYTHON="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/python3}"
-PYTHON="${PYTHON:-$(command -v python3)}"
-TWINE="${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/twine}"
-TWINE="${TWINE:-$(command -v twine 2>/dev/null || echo "")}"
+# ── Detect Python + Twine (Mac: bin/, Windows: Scripts/) ─────────────────────
+if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+  if   [[ -f "$VIRTUAL_ENV/bin/python3" ]];      then PYTHON="$VIRTUAL_ENV/bin/python3"
+  elif [[ -f "$VIRTUAL_ENV/Scripts/python.exe" ]]; then PYTHON="$VIRTUAL_ENV/Scripts/python.exe"
+  else PYTHON="$(command -v python3 || command -v python)"
+  fi
+  if   [[ -f "$VIRTUAL_ENV/bin/twine" ]];        then TWINE="$VIRTUAL_ENV/bin/twine"
+  elif [[ -f "$VIRTUAL_ENV/Scripts/twine.exe" ]]; then TWINE="$VIRTUAL_ENV/Scripts/twine.exe"
+  else TWINE="$(command -v twine 2>/dev/null || echo '')"
+  fi
+else
+  PYTHON="$(command -v python3 || command -v python)"
+  TWINE="$(command -v twine 2>/dev/null || echo '')"
+fi
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}${C}forge-framework release script${X}"
@@ -125,10 +138,11 @@ $DRY_RUN && echo -e "${Y}  DRY-RUN MODE — nothing will be published or pushed$
 [ "$FROM_PHASE" -gt 1 ] && echo -e "${Y}  Resuming from phase $FROM_PHASE${X}"
 
 # ── Read current versions from files (always, even when resuming) ──────────────
-PY_VER=$(python3 -c "import re; print(re.search(r'\"(.+?)\"', open('$REPO_ROOT/packages/forge-py/forge/version.py').read()).group(1))")
-PY_TOML_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-py/pyproject.toml').read(), re.M).group(1))")
-TS_VER=$(python3 -c "import json; print(json.load(open('$REPO_ROOT/packages/forge-ts/package.json'))['version'])")
-SUITE_VER=$(python3 -c "import re; print(re.search(r'^version = \"(.+?)\"', open('$REPO_ROOT/packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
+cd "$REPO_ROOT"
+PY_VER=$("$PYTHON" -c "import re; print(re.search(r'\"(.+?)\"', open('packages/forge-py/forge/version.py').read()).group(1))")
+PY_TOML_VER=$("$PYTHON" -c "import re; print(re.search(r'^version = \"(.+?)\"', open('packages/forge-py/pyproject.toml').read(), re.M).group(1))")
+TS_VER=$("$PYTHON" -c "import json; print(json.load(open('packages/forge-ts/package.json'))['version'])")
+SUITE_VER=$("$PYTHON" -c "import re; print(re.search(r'^version = \"(.+?)\"', open('packages/forge-suite/pyproject.toml').read(), re.M).group(1))")
 
 # If resuming from phase >= 2, versions are already bumped — read NEW_VERSION from state
 if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
@@ -138,7 +152,7 @@ if [ "$FROM_PHASE" -ge 2 ] && [ -f "$STATE_FILE" ]; then
 elif [[ -n "$EXPLICIT_VERSION" ]]; then
   NEW_VERSION="$EXPLICIT_VERSION"
 elif [[ -n "$BUMP" ]]; then
-  NEW_VERSION=$(python3 - "$PY_VER" "$BUMP" <<'PYEOF'
+  NEW_VERSION=$("$PYTHON" - "$PY_VER" "$BUMP" <<'PYEOF'
 import sys
 major, minor, patch = map(int, sys.argv[1].split("."))
 bump = sys.argv[2]
@@ -437,12 +451,14 @@ if [ "$FROM_PHASE" -le 5 ]; then
     # For forge-suite: verify webapp_dist was packaged
     if [[ "$pkg" == "forge-suite" ]]; then
       log_step "Verifying webapp_dist is included in forge-suite wheel..."
-      DIST_FILE_COUNT=$("$PYTHON" -c "
-import zipfile
-with zipfile.ZipFile('$WHEEL') as z:
+      # Pass $WHEEL as an argument so Git Bash converts the POSIX path for Windows Python
+      DIST_FILE_COUNT=$("$PYTHON" - "$WHEEL" <<'PYEOF'
+import zipfile, sys
+with zipfile.ZipFile(sys.argv[1]) as z:
     n = sum(1 for f in z.namelist() if 'webapp_dist' in f)
     print(n)
-")
+PYEOF
+)
       if [[ "$DIST_FILE_COUNT" -eq 0 ]]; then
         die "webapp_dist NOT found inside $WHEEL_NAME — check pyproject.toml force-include"
       fi

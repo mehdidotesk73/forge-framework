@@ -345,7 +345,7 @@ def init_project(project_path: str, name: str | None) -> None:
     from forge_suite.operations.projects import register_project
     reg = register_project(str(dest))
     if "error" in reg:
-        console.print(f"[yellow]⚠[/yellow] Project created but not registered: {reg['error']}")
+        console.print(f"[yellow][!][/yellow] Project created but not registered: {reg['error']}")
         console.print("  Run:  forge-suite mount <path>  when ready.")
     else:
         console.print(f"[green]✓[/green] Created and registered: [bold]{reg['name']}[/bold]")
