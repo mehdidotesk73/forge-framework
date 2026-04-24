@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchObjectSet,
   callEndpoint,
@@ -8,9 +8,12 @@ import {
   Markdown,
   ButtonGroup,
   Modal,
+  TextInput,
 } from "@forge-suite/ts";
 
 const HEALTH_ID = "cccccccc-0010-0000-0000-000000000000";
+const LIST_MODULES_ID = "cccccccc-0028-0000-0000-000000000000";
+const IMPLANT_MODULE_ID = "cccccccc-0031-0000-0000-000000000000";
 
 type ProjectRow = {
   id: string;
@@ -24,6 +27,7 @@ type ModuleEntry = {
   version: string;
   config_var: string;
 };
+type LibraryModule = { id: string; name: string; version: string };
 type HealthResult = { modules?: ModuleEntry[]; project_name?: string };
 
 const CLI_REFERENCE = `\
@@ -72,7 +76,14 @@ forge module build
 \`\`\``;
 
 export function ModulesPage() {
+  const qc = useQueryClient();
   const [cliOpen, setCliOpen] = React.useState(false);
+  const [implantOpen, setImplantOpen] = React.useState(false);
+  const [implantModule, setImplantModule] = React.useState("");
+  const [implantMsg, setImplantMsg] = React.useState<{
+    text: string;
+    ok: boolean;
+  } | null>(null);
 
   const { data: projectData } = useQuery({
     queryKey: ["forge_projects"],
@@ -89,6 +100,36 @@ export function ModulesPage() {
   });
 
   const modules: ModuleEntry[] = health?.modules ?? [];
+
+  const { data: libraryData } = useQuery({
+    queryKey: ["library_modules"],
+    queryFn: () =>
+      callEndpoint<{ modules?: LibraryModule[] }>(LIST_MODULES_ID, {}),
+    refetchInterval: 15000,
+  });
+  const libraryModules: LibraryModule[] = libraryData?.modules ?? [];
+
+  const implant = useMutation({
+    mutationFn: ({ module_name }: { module_name: string }) =>
+      callEndpoint<{ ok?: boolean; note?: string; error?: string }>(
+        IMPLANT_MODULE_ID,
+        { project_id: active?.id ?? "", module_name },
+      ),
+    onSuccess: (result) => {
+      if (result?.error) {
+        setImplantMsg({ text: result.error, ok: false });
+      } else {
+        setImplantMsg({
+          text: result?.note ?? "Module implanted successfully.",
+          ok: true,
+        });
+        qc.invalidateQueries();
+      }
+    },
+    onError: (err) => {
+      setImplantMsg({ text: String(err), ok: false });
+    },
+  });
 
   return (
     <>
@@ -163,6 +204,19 @@ export function ModulesPage() {
           <ButtonGroup
             buttons={[
               {
+                label: "⬡ Implant Module",
+                variant: "primary",
+                disabled: !active,
+                action: {
+                  kind: "ui",
+                  handler: () => {
+                    setImplantModule("");
+                    setImplantMsg(null);
+                    setImplantOpen(true);
+                  },
+                },
+              },
+              {
                 label: "CLI Reference",
                 variant: "secondary",
                 action: { kind: "ui", handler: () => setCliOpen(true) },
@@ -171,6 +225,101 @@ export function ModulesPage() {
           />
         }
       />
+      <Modal
+        open={implantOpen}
+        onClose={() => {
+          setImplantOpen(false);
+          setImplantMsg(null);
+        }}
+        title="Implant Module"
+        size="sm"
+      >
+        <Container direction="column" gap={12}>
+          {libraryModules.length === 0 ? (
+            <Markdown>
+              {
+                "No modules are absorbed yet. Visit **Module Library** to absorb one first."
+              }
+            </Markdown>
+          ) : (
+            <>
+              <Container direction="column" gap={4}>
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  Select a module to add to <strong>{active?.name}</strong>
+                </span>
+                {libraryModules.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setImplantModule(m.name)}
+                    style={{
+                      textAlign: "left",
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      border: `1px solid ${implantModule === m.name ? "var(--accent)" : "var(--border)"}`,
+                      background:
+                        implantModule === m.name
+                          ? "var(--accent-subtle)"
+                          : "var(--bg-panel)",
+                      color: "var(--text)",
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {m.name}
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 11,
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      v{m.version}
+                    </span>
+                  </button>
+                ))}
+              </Container>
+              {implantMsg && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: implantMsg.ok
+                      ? "var(--accent-green)"
+                      : "var(--accent-red)",
+                    padding: "4px 0",
+                  }}
+                >
+                  {implantMsg.text}
+                </div>
+              )}
+              <ButtonGroup
+                size="sm"
+                buttons={[
+                  {
+                    label: implant.isPending ? "Implanting…" : "Implant",
+                    variant: "primary",
+                    disabled: !implantModule || implant.isPending,
+                    action: {
+                      kind: "ui",
+                      handler: () =>
+                        implant.mutate({ module_name: implantModule }),
+                    },
+                  },
+                  {
+                    label: "Cancel",
+                    action: {
+                      kind: "ui",
+                      handler: () => {
+                        setImplantOpen(false);
+                        setImplantMsg(null);
+                      },
+                    },
+                  },
+                ]}
+              />
+            </>
+          )}
+        </Container>
+      </Modal>
       <Modal
         open={cliOpen}
         onClose={() => setCliOpen(false)}

@@ -617,5 +617,93 @@
       }
     ],
     "path": "/endpoints/cccccccc-0014-0000-0000-000000000000"
+  },
+  "cccccccc-0028-0000-0000-000000000000": {
+    "id": "cccccccc-0028-0000-0000-000000000000",
+    "name": "list_modules",
+    "kind": "action",
+    "description": "Return all modules absorbed into this forge-suite instance",
+    "repo": "endpoint_repos.module_endpoints",
+    "params": [],
+    "path": "/endpoints/cccccccc-0028-0000-0000-000000000000"
+  },
+  "cccccccc-0029-0000-0000-000000000000": {
+    "id": "cccccccc-0029-0000-0000-000000000000",
+    "name": "absorb_module",
+    "kind": "action",
+    "description": "Absorb an existing Forge project as a module into forge-suite",
+    "repo": "endpoint_repos.module_endpoints",
+    "params": [
+      {
+        "name": "source_path",
+        "type": "string",
+        "required": true,
+        "description": "Absolute path to the Forge project to absorb",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": false,
+        "description": "Module name slug (inferred from forge.toml if omitted)",
+        "default": ""
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "required": false,
+        "description": "Human-readable description of the module",
+        "default": ""
+      }
+    ],
+    "path": "/endpoints/cccccccc-0029-0000-0000-000000000000"
+  },
+  "cccccccc-0030-0000-0000-000000000000": {
+    "id": "cccccccc-0030-0000-0000-000000000000",
+    "name": "shed_module",
+    "kind": "action",
+    "description": "Remove a module from forge-suite (does not affect managed projects)",
+    "repo": "endpoint_repos.module_endpoints",
+    "params": [
+      {
+        "name": "module_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "drop_datasets",
+        "type": "boolean",
+        "required": false,
+        "description": "Delete the module's dataset files from forge-webapp (destructive)",
+        "default": false
+      }
+    ],
+    "path": "/endpoints/cccccccc-0030-0000-0000-000000000000"
+  },
+  "cccccccc-0031-0000-0000-000000000000": {
+    "id": "cccccccc-0031-0000-0000-000000000000",
+    "name": "implant_module",
+    "kind": "action",
+    "description": "Add an absorbed module to a managed Forge project's forge.toml",
+    "repo": "endpoint_repos.module_endpoints",
+    "params": [
+      {
+        "name": "project_id",
+        "type": "string",
+        "required": true,
+        "description": "",
+        "default": null
+      },
+      {
+        "name": "module_name",
+        "type": "string",
+        "required": true,
+        "description": "Name of an absorbed module (from list_modules)",
+        "default": null
+      }
+    ],
+    "path": "/endpoints/cccccccc-0031-0000-0000-000000000000"
   }
 }

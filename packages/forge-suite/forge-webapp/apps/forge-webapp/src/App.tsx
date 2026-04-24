@@ -8,6 +8,7 @@ import { AppsPage } from "./pages/AppsPage.js";
 import { FilesPage } from "./pages/FilesPage.js";
 import { DatasetsPage } from "./pages/DatasetsPage.js";
 import { ModulesPage } from "./pages/ModulesPage.js";
+import { ModuleLibraryPage } from "./pages/ModuleLibraryPage.js";
 
 export type Page =
   | "overview"
@@ -16,6 +17,7 @@ export type Page =
   | "endpoints"
   | "apps"
   | "modules"
+  | "module-library"
   | "files"
   | "datasets";
 
@@ -32,6 +34,7 @@ export function App() {
         {page === "endpoints" && <EndpointsPage />}
         {page === "apps" && <AppsPage />}
         {page === "modules" && <ModulesPage />}
+        {page === "module-library" && <ModuleLibraryPage />}
         {page === "files" && <FilesPage />}
         {page === "datasets" && <DatasetsPage />}
       </main>

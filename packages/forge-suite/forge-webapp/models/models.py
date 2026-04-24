@@ -108,3 +108,18 @@ class ProjectFile(ForgeSnapshotModel):
     filename: str = field_def(display="Filename")
     size_bytes: str = field_def(display="Size (bytes)")
     added_at: str = field_def(display="Added At", display_hint="datetime")
+
+
+FORGE_MODULE_DATASET_ID = "1d89bd22-ccb2-4dd7-b214-4d407722b817"
+
+
+@forge_model(mode="snapshot", backing_dataset=FORGE_MODULE_DATASET_ID)
+class ForgeModule(ForgeSnapshotModel):
+    id: str = field_def(primary_key=True, display="ID")
+    name: str = field_def(display="Name")
+    package: str = field_def(display="Package")
+    version: str = field_def(display="Version")
+    source_path: str = field_def(display="Source Path")
+    namespace_path: str = field_def(display="Namespace Path")
+    absorbed_at: str = field_def(display="Absorbed At", display_hint="datetime")
+    description: str = field_def(display="Description")

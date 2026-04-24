@@ -3,6 +3,7 @@ from .app import *  # noqa: F401,F403
 from .artifactstamp import *  # noqa: F401,F403
 from .endpoint import *  # noqa: F401,F403
 from .endpointrepo import *  # noqa: F401,F403
+from .forgemodule import *  # noqa: F401,F403
 from .forgeproject import *  # noqa: F401,F403
 from .objecttype import *  # noqa: F401,F403
 from .pipeline import *  # noqa: F401,F403

@@ -76,7 +76,7 @@ def module_add(name: str, package: str | None, no_install: bool) -> None:
         if result.returncode != 0:
             console.print(f"[red]pip install failed:[/red]\n{result.stderr}")
             raise SystemExit(1)
-        console.print(f"[green]✓[/green] Installed {pip_package}")
+        console.print(f"[green]OK[/green] Installed {pip_package}")
 
     config_var = _default_config_var(name)
 
@@ -114,7 +114,7 @@ def module_add(name: str, package: str | None, no_install: bool) -> None:
     n_pipelines = len(mc.pipelines)
     n_datasets = len(mc.dataset_ids)
     console.print(
-        f"[green]✓[/green] Added module [bold]{name}[/bold] — "
+        f"[green]OK[/green] Added module [bold]{name}[/bold] - "
         f"{n_models} model(s), {n_repos} endpoint repo(s), "
         f"{n_pipelines} pipeline(s), {n_datasets} dataset(s) bootstrapped"
     )
@@ -170,7 +170,7 @@ def module_remove(name: str, drop_datasets: bool) -> None:
     with open(toml_path, "wb") as f:
         tomli_w.dump(raw, f)
 
-    console.print(f"[green]✓[/green] Removed module [bold]{name}[/bold] from forge.toml")
+    console.print(f"[green]OK[/green] Removed module [bold]{name}[/bold] from forge.toml")
     if not drop_datasets:
         console.print(
             "[dim]Tip: run with --drop-datasets to also delete the module's data files.[/dim]"
@@ -366,7 +366,7 @@ def module_build() -> None:
 
     module_py_path.write_text(content, encoding="utf-8")
     console.print(
-        f"[green]✓[/green] Generated [bold]forge_modules/{snake_name}/module.py[/bold] — "
+        f"[green]OK[/green] Generated [bold]forge_modules/{snake_name}/module.py[/bold] - "
         f"{len(model_lines)} model(s), {len(repo_lines)} endpoint repo(s), "
         f"{len(pipeline_lines)} pipeline(s)"
     )
@@ -426,9 +426,9 @@ def module_adopt(project_path: str, name: str | None, in_place: bool) -> None:
             target = monorepo_root / "packages" / "forge-modules" / project_name
         else:
             target = Path.cwd() / "packages" / "forge-modules" / project_name
-        console.print(f"[dim]Copying {src} → {target}...[/dim]")
+        console.print(f"[dim]Copying {src} -> {target}...[/dim]")
         _copytree_filtered(src, target)
-        console.print(f"[green]✓[/green] Copied to {target}")
+        console.print(f"[green]OK[/green] Copied to {target}")
 
     # Generate pyproject.toml
     _write_pyproject_toml(target, project_name)
@@ -455,7 +455,7 @@ def module_adopt(project_path: str, name: str | None, in_place: bool) -> None:
             "[yellow][!][/yellow] 'forge module build' failed — run it manually inside the target dir."
         )
 
-    console.print(f"[green]✓[/green] Module [bold]{project_name}[/bold] adopted at {target}")
+    console.print(f"[green]OK[/green] Module [bold]{project_name}[/bold] adopted at {target}")
     console.print(
         "[dim]Next: pip install -e . then forge module add <name> in your host project[/dim]"
     )
@@ -537,4 +537,4 @@ where   = ["."]
 include = ["forge_modules*"]
 '''
     pyproject_path.write_text(content, encoding="utf-8")
-    console.print(f"[green]✓[/green] Generated pyproject.toml for forge-modules-{name}")
+    console.print(f"[green]OK[/green] Generated pyproject.toml for forge-modules-{name}")

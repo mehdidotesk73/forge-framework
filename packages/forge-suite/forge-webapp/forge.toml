@@ -47,6 +47,11 @@ class_name = "ProjectFile"
 mode = "snapshot"
 module = "models.models"
 
+[[models]]
+class_name = "ForgeModule"
+mode = "snapshot"
+module = "models.models"
+
 [[endpoint_repos]]
 module = "endpoint_repos.project_endpoints"
 
@@ -59,7 +64,15 @@ module = "endpoint_repos.computed_endpoints"
 [[endpoint_repos]]
 module = "endpoint_repos.file_endpoints"
 
+[[endpoint_repos]]
+module = "endpoint_repos.module_endpoints"
+
 [[apps]]
 name = "forge-webapp"
 path = "./apps/forge-webapp"
 port = "5174"
+
+[[forge_modules]]
+name       = "ai-chat"
+package    = "forge-modules-ai-chat"
+config_var = "forge_modules.ai_chat.module:MODULE_CONFIG"

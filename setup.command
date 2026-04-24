@@ -31,6 +31,9 @@ pip install -e "$REPO_ROOT/packages/forge-py" -e "$REPO_ROOT/packages/forge-suit
 echo "→ Installing npm dependencies..."
 npm install --prefix "$REPO_ROOT" --silent
 
+echo "→ Building forge-ts widget library..."
+npm run build:ts --prefix "$REPO_ROOT" --silent
+
 # ── Stop any running forge backend (releases DuckDB lock) ────────────────────
 
 FORGE_PIDS=$(pgrep -f "forge.cli.main" 2>/dev/null || true)

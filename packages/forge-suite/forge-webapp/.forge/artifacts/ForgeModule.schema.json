@@ -1,0 +1,10 @@
+{
+  "name": "ForgeModule",
+  "mode": "snapshot",
+  "backing_dataset_id": "1d89bd22-ccb2-4dd7-b214-4d407722b817",
+  "backing_dataset_name": "1d89bd22-ccb2-4dd7-b214-4d407722b817",
+  "snapshot_dataset_id": "da131fc4-da34-4822-83ce-c303018da1b6",
+  "fields": {},
+  "primary_key": "id",
+  "built_at": "2026-04-24T22:06:05.785046+00:00"
+}

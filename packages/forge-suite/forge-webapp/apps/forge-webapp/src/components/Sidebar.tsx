@@ -22,9 +22,9 @@ const NAV_ITEMS = [
   { id: "model", label: "Model", icon: "⬡" },
   { id: "endpoints", label: "Endpoints", icon: "⚡" },
   { id: "apps", label: "Apps", icon: "▣" },
-  { id: "modules", label: "Modules", icon: "⬡" },
-  { id: "datasets", label: "Datasets", icon: "⊞" },
-  { id: "files", label: "Files", icon: "◻" },
+  { id: "modules", label: "Modules", icon: "⊞" },
+  { id: "datasets", label: "Datasets", icon: "∴" },
+  { id: "files", label: "Files", icon: "📁" },
 ] as const;
 
 interface Props {
@@ -286,6 +286,21 @@ export function Sidebar({ activePage, onNavigate }: Props) {
                 }
               ></Container>
             )}
+
+            {/* Module Library nav */}
+            <Navbar
+              orientation="vertical"
+              size="sm"
+              items={[
+                {
+                  id: "module-library",
+                  label: "⬚ Module Library",
+                  active: activePage === "module-library",
+                  onClick: () => onNavigate("module-library" as Page),
+                },
+              ]}
+              style={{ padding: "4px 0" }}
+            />
 
             {/* Utility buttons */}
             <Container padding="10px 16px">

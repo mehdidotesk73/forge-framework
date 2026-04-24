@@ -46,6 +46,12 @@ export interface ContainerProps {
   titleIcon?: string;
   /** CSS color for the title icon. Defaults to accent color for lg, muted for sm/md. */
   titleIconColor?: string;
+  /** Elements rendered to the right of the title in the header's left section. */
+  headerLeft?: React.ReactNode;
+  /** Elements rendered in the header's center section (flex-1 region). */
+  headerCenter?: React.ReactNode;
+  /** Elements rendered in the header's right section. */
+  headerRight?: React.ReactNode;
   /** Background fill. "none" = transparent (default); "panel", "card", "surface" map to theme bg vars. */
   variant?: "none" | "panel" | "card" | "surface";
   className?: string;
@@ -116,6 +122,9 @@ export function Container({
   titleSize = "sm",
   titleIcon,
   titleIconColor,
+  headerLeft,
+  headerCenter,
+  headerRight,
   className = "",
   style: styleProp,
 }: ContainerProps) {
@@ -134,29 +143,50 @@ export function Container({
     }
   }
 
-  const titleEl = title ? (
+  const hasHeader = title || headerLeft || headerCenter || headerRight;
+  const headerEl = hasHeader ? (
     <div
       style={{
-        ...TITLE_STYLES[titleSize],
-        padding: "8px 0 4px",
         display: "flex",
-        alignItems: "center",
-        gap: 6,
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 8,
+        padding: "8px 0 4px",
         flexShrink: 0,
       }}
     >
-      {titleIcon && (
-        <span
-          style={{
-            color:
-              titleIconColor ??
-              (titleSize === "lg" ? "var(--accent)" : "inherit"),
-          }}
-        >
-          {titleIcon}
-        </span>
+      {/* Left section: icon + title + headerLeft */}
+      {(title || titleIcon || headerLeft) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {titleIcon && (
+            <span
+              style={{
+                color:
+                  titleIconColor ??
+                  (titleSize === "lg" ? "var(--accent)" : "inherit"),
+              }}
+            >
+              {titleIcon}
+            </span>
+          )}
+          {title && <span style={{ ...TITLE_STYLES[titleSize] }}>{title}</span>}
+          {headerLeft}
+        </div>
       )}
-      {title}
+      {/* Spacer pushes center and right to the end */}
+      {(headerCenter || headerRight) && <div style={{ flex: 1 }} />}
+      {/* Center section */}
+      {headerCenter && (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {headerCenter}
+        </div>
+      )}
+      {/* Right section */}
+      {headerRight && (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {headerRight}
+        </div>
+      )}
     </div>
   ) : null;
 
@@ -173,7 +203,7 @@ export function Container({
           ...styleProp,
         }}
       >
-        {titleEl}
+        {headerEl}
         <div
           style={{
             display: "grid",
@@ -232,7 +262,7 @@ export function Container({
 
   // Simple mode: all children in one group
   if (!hasGroups) {
-    if (titleEl) {
+    if (headerEl) {
       return (
         <div
           className={`forge-container ${className}`}
@@ -245,7 +275,7 @@ export function Container({
             ...styleProp,
           }}
         >
-          {titleEl}
+          {headerEl}
           <div
             style={{
               display: "flex",
@@ -291,15 +321,15 @@ export function Container({
       className={`forge-container ${className}`}
       style={{
         display: "flex",
-        flexDirection: titleEl ? "column" : direction,
-        justifyContent: titleEl ? undefined : toJustifyContent(alignItems),
+        flexDirection: headerEl ? "column" : direction,
+        justifyContent: headerEl ? undefined : toJustifyContent(alignItems),
         padding,
         ...bgStyle,
         ...sizeStyle,
         ...styleProp,
       }}
     >
-      {titleEl}
+      {headerEl}
       <div
         style={{
           display: "flex",

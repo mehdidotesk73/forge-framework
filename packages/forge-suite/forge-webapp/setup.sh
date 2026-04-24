@@ -30,6 +30,7 @@ pairs = [
     ("endpoints",       "REPLACE_ENDPOINT_UUID",        "ENDPOINT_DATASET_ID"),
     ("apps",            "REPLACE_APP_UUID",             "APP_DATASET_ID"),
     ("project_files",   "REPLACE_PROJECT_FILE_UUID",    "PROJECT_FILE_DATASET_ID"),
+    ("forge_modules",   "REPLACE_FORGE_MODULE_UUID",    "FORGE_MODULE_DATASET_ID"),
 ]
 
 for dataset_name, placeholder, var_name in pairs:

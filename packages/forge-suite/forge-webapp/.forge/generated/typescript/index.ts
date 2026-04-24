@@ -3,6 +3,7 @@ export * from "./App";
 export * from "./ArtifactStamp";
 export * from "./Endpoint";
 export * from "./EndpointRepo";
+export * from "./ForgeModule";
 export * from "./ForgeProject";
 export * from "./ObjectType";
 export * from "./Pipeline";

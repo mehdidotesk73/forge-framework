@@ -33,7 +33,9 @@ class EndpointBuilder:
         return registry
 
     def build_repo(self, repo_cfg: EndpointRepoConfig) -> dict[str, Any]:
-        repo_path = (self.root / repo_cfg.module.replace(".", "/")).resolve()
+        import importlib.util as _importlib_util
+
+        local_path = (self.root / repo_cfg.module.replace(".", "/")).resolve()
         # Project root must be on path so endpoint modules can import model classes
         if str(self.root) not in sys.path:
             sys.path.insert(0, str(self.root))
@@ -44,8 +46,24 @@ class EndpointBuilder:
         if endpoint_repos_dir not in sys.path:
             sys.path.insert(0, endpoint_repos_dir)
 
+        if local_path.exists():
+            repo_path = local_path
+            base_path = self.root
+        else:
+            # Module may be a pip-installed package; locate via importlib
+            spec = _importlib_util.find_spec(repo_cfg.module)
+            if spec and spec.submodule_search_locations:
+                repo_path = Path(list(spec.submodule_search_locations)[0])
+                base_path = repo_path.parent
+            else:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Endpoint repo not found locally or in site-packages: %s", repo_cfg.module
+                )
+                return {}
+
         # Import all Python modules in the repo to trigger decorator registration
-        self._import_repo_modules(repo_path)
+        self._import_repo_modules(repo_path, base_path)
 
         descriptors: dict[str, Any] = {}
         registry = get_endpoint_registry()
@@ -56,12 +74,14 @@ class EndpointBuilder:
 
         return descriptors
 
-    def _import_repo_modules(self, repo_path: Path) -> None:
+    def _import_repo_modules(self, repo_path: Path, base_path: Path | None = None) -> None:
+        if base_path is None:
+            base_path = self.root
         _SKIP = {"setup.py", "conftest.py"}
         for py_file in repo_path.rglob("*.py"):
             if py_file.name.startswith("_") or py_file.name in _SKIP:
                 continue
-            rel = py_file.relative_to(self.root)
+            rel = py_file.relative_to(base_path)
             module_name = str(rel.with_suffix("")).replace("/", ".").replace("\\", ".")
             try:
                 importlib.import_module(module_name)
