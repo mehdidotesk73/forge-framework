@@ -136,7 +136,12 @@ def write_ide_config(root: Path, suite_root: Path | None = None) -> None:
         venv_parent = forge_framework_root
         forge_py_path = forge_framework_root / "packages" / "forge-py"
 
-    venv_python = venv_parent / ".venv" / "bin" / "python"
+    import sys as _sys
+    venv_python = (
+        venv_parent / ".venv" / "Scripts" / "python.exe"
+        if _sys.platform == "win32"
+        else venv_parent / ".venv" / "bin" / "python"
+    )
     pyright_cfg = json.dumps({
         "venvPath": str(venv_parent),
         "venv": ".venv",
@@ -250,31 +255,162 @@ You may need to restart the project backend and apps from the Forge Suite UI.
 """
 
 
+_WINDOWS_ONLY_PACKAGES = {"pywin32", "pywin32-ctypes", "pywinpty", "pypiwin32"}
+
+
+def _read_requirements(req_file: Path) -> str:
+    """Read requirements.txt handling UTF-8 and UTF-16 encodings."""
+    raw = req_file.read_bytes()
+    for enc in ("utf-8-sig", "utf-16", "utf-8", "latin-1"):
+        try:
+            return raw.decode(enc)
+        except (UnicodeDecodeError, Exception):
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
+def _filter_requirements(text: str, platform: str) -> str:
+    """Strip platform-incompatible packages from requirements text."""
+    if platform == "win32":
+        return text
+    lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") or not stripped:
+            lines.append(line)
+            continue
+        # Extract package name (before any version specifier or extras)
+        pkg_name = stripped.split(";")[0].split("==")[0].split(">=")[0].split("<=")[0]
+        pkg_name = pkg_name.split("[")[0].strip().lower().replace("_", "-")
+        if pkg_name in _WINDOWS_ONLY_PACKAGES:
+            lines.append(f"# skipped (Windows-only): {line}")
+            continue
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def bootstrap_project_venv(root: Path) -> dict:
     """Create .venv and install requirements.txt into it. Returns status dict."""
     import subprocess
     import sys as _sys
+    import tempfile
 
     venv_dir = root / ".venv"
-    try:
-        subprocess.run(
-            [_sys.executable, "-m", "venv", str(venv_dir)],
-            check=True, capture_output=True, timeout=60,
-        )
-    except Exception as exc:
-        return {"venv": False, "installed": False, "error": str(exc)}
+    if not venv_dir.exists():
+        try:
+            subprocess.run(
+                [_sys.executable, "-m", "venv", str(venv_dir)],
+                check=True, capture_output=True, timeout=60,
+            )
+        except Exception as exc:
+            return {"venv": False, "installed": False, "error": str(exc)}
 
     pip_bin = venv_dir / ("Scripts/pip.exe" if _sys.platform == "win32" else "bin/pip")
     req_file = root / "requirements.txt"
+    if not req_file.exists():
+        return {"venv": True, "installed": False, "error": "requirements.txt not found"}
+
+    req_text = _filter_requirements(_read_requirements(req_file), _sys.platform)
+
     try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as tmp:
+            tmp.write(req_text)
+            tmp_path = tmp.name
         subprocess.run(
-            [str(pip_bin), "install", "-q", "-r", str(req_file)],
+            [str(pip_bin), "install", "-q", "-r", tmp_path],
             check=True, capture_output=True, timeout=300,
         )
     except Exception as exc:
         return {"venv": True, "installed": False, "error": str(exc)}
+    finally:
+        import os as _os
+        try:
+            _os.unlink(tmp_path)
+        except Exception:
+            pass
 
     return {"venv": True, "installed": True}
+
+
+def bootstrap_project_runtime(root: Path) -> dict:
+    """Bootstrap a freshly cloned project: create venv, install deps, run init pipelines, build artifacts.
+
+    Safe to call on any project — each step is skipped if already done.
+    Returns a status dict with keys: venv, installed, init_pipelines, model_build, endpoint_build, errors.
+    """
+    import subprocess
+    import sys as _sys
+
+    errors: list[str] = []
+
+    # Step 1: venv + pip install
+    venv_result = bootstrap_project_venv(root)
+    if not venv_result.get("venv"):
+        return {**venv_result, "init_pipelines": [], "model_build": False, "endpoint_build": False, "errors": errors}
+    if venv_result.get("error"):
+        errors.append(f"pip install: {venv_result['error']}")
+
+    # Resolve forge binary inside project venv
+    if _sys.platform == "win32":
+        forge_bin = root / ".venv" / "Scripts" / "forge.exe"
+    else:
+        forge_bin = root / ".venv" / "bin" / "forge"
+    if not forge_bin.exists():
+        import shutil
+        fallback = shutil.which("forge")
+        forge_bin_str = fallback or "forge"
+    else:
+        forge_bin_str = str(forge_bin)
+
+    _run_env = {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    import os as _os
+    _env = {**_os.environ, **_run_env}
+
+    def _run(args: list[str], timeout: int = 120) -> tuple[bool, str]:
+        try:
+            r = subprocess.run(
+                [forge_bin_str, *args], cwd=str(root), env=_env,
+                capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace",
+            )
+            if r.returncode != 0:
+                return False, (r.stderr or r.stdout or "")[-500:]
+            return True, ""
+        except Exception as exc:
+            return False, str(exc)
+
+    # Step 2: run init pipelines (any pipeline whose display_name contains "init")
+    ran_pipelines: list[str] = []
+    try:
+        cfg = read_toml(root / "forge.toml")
+        for p in cfg.get("pipelines", []):
+            name = p.get("display_name") or p.get("name", "")
+            if "init" in name.lower():
+                ok, err = _run(["pipeline", "run", name], timeout=120)
+                if ok:
+                    ran_pipelines.append(name)
+                else:
+                    errors.append(f"pipeline run {name}: {err}")
+    except Exception as exc:
+        errors.append(f"init pipelines: {exc}")
+
+    # Step 3: forge model build
+    model_ok, model_err = _run(["model", "build"], timeout=180)
+    if not model_ok:
+        errors.append(f"model build: {model_err}")
+
+    # Step 4: forge endpoint build
+    endpoint_ok, endpoint_err = _run(["endpoint", "build"], timeout=60)
+    if not endpoint_ok:
+        errors.append(f"endpoint build: {endpoint_err}")
+
+    return {
+        "venv": venv_result.get("venv", False),
+        "installed": venv_result.get("installed", False),
+        "init_pipelines": ran_pipelines,
+        "model_build": model_ok,
+        "endpoint_build": endpoint_ok,
+        "errors": errors,
+    }
 
 
 def create_project(root: Path, suite_root: Path | None = None) -> None:

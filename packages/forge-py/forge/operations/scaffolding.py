@@ -420,6 +420,36 @@ trap cleanup EXIT INT TERM
 wait "$DEV_PID"
 '''
 
+_APP_COMMAND_BAT = '''\
+@echo off
+:: {app_name} — start the dev server and open the app in a browser.
+setlocal
+
+set "PROJECT_ROOT=%~dp0"
+set "APP_DIR=%PROJECT_ROOT%apps\\{app_name}"
+set "PORT={port}"
+
+if not exist "%APP_DIR%\\node_modules" (
+  echo ^> Installing npm dependencies ^(first run^)...
+  npm install --prefix "%APP_DIR%" --silent
+)
+
+echo ^> Starting {app_name} dev server on :%PORT%...
+start /B npm --prefix "%APP_DIR%" run dev
+
+echo ^> Waiting for server to be ready...
+:wait_loop
+curl -s "http://localhost:%PORT%" >nul 2>&1 && goto ready
+timeout /t 1 /nobreak >nul
+goto wait_loop
+
+:ready
+echo ^√ {app_name} running at http://localhost:%PORT%
+start "" "http://localhost:%PORT%"
+echo Press Ctrl+C to stop.
+pause >nul
+'''
+
 _APP_PACKAGE_JSON = '''\
 {{
   "name": "{app_name}",
@@ -693,7 +723,10 @@ def create_app(
     (app_dir / "src" / "components" / "Sidebar.tsx").write_text(_APP_SIDEBAR_TSX.format(app_name=name), encoding="utf-8")
     (app_dir / "src" / "pages" / "landing.tsx").write_text(_APP_LANDING_TSX.format(app_name=name), encoding="utf-8")
 
-    if sys.platform != "win32":
+    if sys.platform == "win32":
+        bat_file = root / f"{name}.bat"
+        bat_file.write_text(_APP_COMMAND_BAT.format(app_name=name, port=port), encoding="utf-8")
+    else:
         command_file = root / f"{name}.command"
         command_file.write_text(_APP_COMMAND.format(app_name=name, port=port))
         command_file.chmod(0o755)

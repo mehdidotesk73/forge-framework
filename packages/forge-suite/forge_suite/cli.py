@@ -27,19 +27,18 @@ SERVE_PORT = 5174
 
 
 def _bootstrap_webapp() -> None:
-    """Copy template and initialise datasets/artifacts on first run."""
-    artifacts_dir = _WEBAPP_DIR / ".forge" / "artifacts"
-    if (artifacts_dir / "ForgeProject.schema.json").exists():
-        return
-
-    console.print("  [dim]Setting up forge-suite (first run)…[/dim]")
-
+    """Copy template and initialise datasets/artifacts on first run, then sync on every run."""
     import shutil
+    import os
     import pandas as pd
 
-    # Copy the backend template to the user's home dir if not present
-    if not _WEBAPP_DIR.exists():
-        shutil.copytree(str(_TEMPLATE_DIR), str(_WEBAPP_DIR))
+    artifacts_dir = _WEBAPP_DIR / ".forge" / "artifacts"
+    first_run = not (artifacts_dir / "ForgeProject.schema.json").exists()
+
+    if first_run:
+        console.print("  [dim]Setting up forge-suite (first run)…[/dim]")
+        if not _WEBAPP_DIR.exists():
+            shutil.copytree(str(_TEMPLATE_DIR), str(_WEBAPP_DIR))
 
     forge_dir = _WEBAPP_DIR / ".forge"
     forge_dir.mkdir(parents=True, exist_ok=True)
@@ -49,6 +48,36 @@ def _bootstrap_webapp() -> None:
     webapp_str = str(_WEBAPP_DIR)
     if webapp_str not in sys.path:
         sys.path.insert(0, webapp_str)
+
+    # Always sync models/models.py from template (framework-owned; user never edits it)
+    template_models = _TEMPLATE_DIR / "models" / "models.py"
+    runtime_models  = _WEBAPP_DIR   / "models" / "models.py"
+    models_changed = False
+    if template_models.exists():
+        template_src = template_models.read_text(encoding="utf-8")
+        runtime_src  = runtime_models.read_text(encoding="utf-8") if runtime_models.exists() else ""
+        if template_src != runtime_src:
+            runtime_models.parent.mkdir(parents=True, exist_ok=True)
+            runtime_models.write_text(template_src, encoding="utf-8")
+            models_changed = True
+
+    # Always sync endpoint repos from template (copy any that are missing)
+    template_repos_dir = _TEMPLATE_DIR / "endpoint_repos"
+    runtime_repos_dir  = _WEBAPP_DIR   / "endpoint_repos"
+    repos_changed = False
+    if template_repos_dir.exists():
+        for repo_dir in template_repos_dir.iterdir():
+            if not repo_dir.is_dir():
+                continue
+            dest = runtime_repos_dir / repo_dir.name
+            if not dest.exists():
+                shutil.copytree(str(repo_dir), str(dest))
+                repos_changed = True
+
+    # Ensure forge.toml has every [[models]] and [[endpoint_repos]] entry from the template
+    toml_changed = _sync_forge_toml(_TEMPLATE_DIR / "forge.toml", _WEBAPP_DIR / "forge.toml")
+
+    need_rebuild = first_run or models_changed or repos_changed or toml_changed
 
     # Import models to discover dataset UUIDs, then initialise empty datasets
     from forge.storage.engine import StorageEngine
@@ -66,9 +95,11 @@ def _bootstrap_webapp() -> None:
         if engine.get_dataset(uid) is None:
             engine.write_dataset(uid, pd.DataFrame())
 
+    if not need_rebuild:
+        return
+
     # Call builders directly (avoids python -m issues on Windows caused by
     # forge/cli/__init__.py pre-importing forge.cli.main before runpy executes it)
-    import os
     _prev_cwd = os.getcwd()
     try:
         os.chdir(str(_WEBAPP_DIR))
@@ -83,7 +114,66 @@ def _bootstrap_webapp() -> None:
             EndpointBuilder(_config, _root).build_all()
     finally:
         os.chdir(_prev_cwd)
-    console.print("  [dim]forge-suite ready.[/dim]\n")
+    if first_run:
+        console.print("  [dim]forge-suite ready.[/dim]\n")
+
+
+def _sync_forge_toml(template_toml: Path, runtime_toml: Path) -> bool:
+    """
+    Ensure every [[models]] and [[endpoint_repos]] entry in template_toml exists in runtime_toml.
+    Returns True if runtime_toml was modified.
+    """
+    if not template_toml.exists() or not runtime_toml.exists():
+        return False
+
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        try:
+            import tomli as tomllib  # type: ignore[no-redef]
+        except ImportError:
+            return False
+
+    with open(template_toml, "rb") as f:
+        tmpl = tomllib.load(f)
+    with open(runtime_toml, "rb") as f:
+        runtime = tomllib.load(f)
+
+    def _class_name(r: dict) -> str:
+        return r.get("class_name") or r.get("class") or r.get("name", "")
+
+    def _repo_module(r: dict) -> str:
+        if "module" in r:
+            return r["module"]
+        path = r.get("path", "").lstrip("./").rstrip("/")
+        return path.replace("/", ".") if path else r.get("name", "")
+
+    template_models  = {_class_name(r)    for r in tmpl.get("models", [])}
+    runtime_models   = {_class_name(r)    for r in runtime.get("models", [])}
+    template_repos   = {_repo_module(r)   for r in tmpl.get("endpoint_repos", [])}
+    runtime_repos    = {_repo_module(r)   for r in runtime.get("endpoint_repos", [])}
+
+    missing_models = template_models - runtime_models
+    missing_repos  = template_repos  - runtime_repos
+    if not missing_models and not missing_repos:
+        return False
+
+    existing_text = runtime_toml.read_text(encoding="utf-8")
+    additions = ""
+    for cls in sorted(missing_models):
+        # find full entry in template to copy mode/module
+        entry = next(r for r in tmpl["models"] if _class_name(r) == cls)
+        additions += (
+            f'\n[[models]]\n'
+            f'class_name = "{cls}"\n'
+            f'mode = "{entry.get("mode", "snapshot")}"\n'
+            f'module = "{entry.get("module", "models.models")}"\n'
+        )
+    for repo in sorted(missing_repos):
+        additions += f'\n[[endpoint_repos]]\nmodule = "{repo}"\n'
+
+    runtime_toml.write_text(existing_text + additions, encoding="utf-8")
+    return True
 
 
 def _sync_quickstart_file() -> None:

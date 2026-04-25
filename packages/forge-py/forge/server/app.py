@@ -241,8 +241,12 @@ def load_endpoint_modules(config: ProjectConfig, root: Path) -> None:
         local_path = root / repo_cfg.module.replace(".", "/")
         repo_path = local_path.resolve()
         if not repo_path.exists():
-            # Module may be a pip-installed package; locate via importlib
-            spec = _importlib_util.find_spec(repo_cfg.module)
+            # Module may be a pip-installed package; locate via importlib.
+            # find_spec raises ModuleNotFoundError when a parent package is absent.
+            try:
+                spec = _importlib_util.find_spec(repo_cfg.module)
+            except (ModuleNotFoundError, ValueError):
+                spec = None
             if spec and spec.submodule_search_locations:
                 repo_path = Path(list(spec.submodule_search_locations)[0])
             else:

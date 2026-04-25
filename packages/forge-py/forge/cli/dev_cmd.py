@@ -37,6 +37,8 @@ def dev_serve(app: str | None, host: str, port: int, reload: bool) -> None:
         bootstrap_module_datasets,
     )
 
+    from forge.version import __version__, TS_VERSION
+
     # Version mismatch check
     _check_version_mismatch(__version__, TS_VERSION, find_project_root())
 
@@ -127,8 +129,12 @@ def _ensure_forge_ts_linked(app_dir: Path, project_root: Path) -> None:
         return
 
     scope_dir.mkdir(parents=True, exist_ok=True)
-    os.symlink(str(forge_ts_src), str(link_target))
-    console.print(f"[dim]Linked @forge-suite/ts → {forge_ts_src}[/dim]")
+    try:
+        os.symlink(str(forge_ts_src), str(link_target))
+        console.print(f"[dim]Linked @forge-suite/ts → {forge_ts_src}[/dim]")
+    except OSError:
+        # Windows requires admin or Developer Mode for symlinks; skip silently
+        pass
 
 
 def _mount_app_static(api, config, root: Path, app_filter: str | None) -> None:

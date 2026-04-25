@@ -49,11 +49,13 @@ def absorb_module(source_path: str, name: str = "", description: str = "") -> di
         {"name": "module_id",     "type": "string",  "required": True},
         {"name": "drop_datasets", "type": "boolean", "required": False, "default": False,
          "description": "Delete the module's dataset files from forge-webapp (destructive)"},
+        {"name": "confirm",       "type": "boolean", "required": False, "default": False,
+         "description": "Required to remove a suite-bundled module"},
     ],
 )
-def shed_module(module_id: str, drop_datasets: bool = False) -> dict:
+def shed_module(module_id: str, drop_datasets: bool = False, confirm: bool = False) -> dict:
     from forge_suite.operations.modules import shed_module as _op
-    return _op(module_id, drop_datasets)
+    return _op(module_id, drop_datasets, confirm)
 
 
 @action_endpoint(

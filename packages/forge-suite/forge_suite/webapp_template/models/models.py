@@ -123,3 +123,4 @@ class ForgeModule(ForgeSnapshotModel):
     namespace_path: str = field_def(display="Namespace Path")
     absorbed_at: str = field_def(display="Absorbed At", display_hint="datetime")
     description: str = field_def(display="Description")
+    origin: str = field_def(display="Origin")

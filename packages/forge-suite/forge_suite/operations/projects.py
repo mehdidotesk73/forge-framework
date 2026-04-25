@@ -106,10 +106,22 @@ def register_project(root_path: str, suite_root: Path | None = None) -> dict:
     if not toml_path.exists():
         create_project(root, suite_root=suite_root)
         created = True
-        from forge.operations.projects import bootstrap_project_venv
-        venv_result = bootstrap_project_venv(root)
+        from forge.operations.projects import bootstrap_project_runtime
+        venv_result = bootstrap_project_runtime(root)
     else:
         write_ide_config(root, suite_root=suite_root)
+        # Always ensure deps are installed (pip is a no-op when nothing changed).
+        # Also run init pipelines + builds when data is missing (freshly cloned project).
+        if (root / "requirements.txt").exists():
+            data_dir = root / ".forge" / "data"
+            data_missing = not data_dir.exists() or not any(data_dir.glob("*.parquet"))
+            from forge.operations.projects import bootstrap_project_runtime, bootstrap_project_venv
+            if data_missing:
+                # Full bootstrap: venv + pip + init pipelines + model/endpoint build
+                venv_result = bootstrap_project_runtime(root)
+            else:
+                # Partial bootstrap: just ensure venv + deps are up to date
+                venv_result = bootstrap_project_venv(root)
 
     cfg = read_toml(toml_path)
     proj_name = cfg.get("project", {}).get("name", root.name)

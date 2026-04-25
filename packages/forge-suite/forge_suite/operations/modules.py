@@ -49,6 +49,7 @@ def list_modules() -> dict:
             "namespace_path": m.namespace_path,
             "absorbed_at": m.absorbed_at,
             "description": m.description,
+            "origin": getattr(m, "origin", "user"),
         }
         for m in ForgeModule.all()
     ]
@@ -57,7 +58,7 @@ def list_modules() -> dict:
 
 # ── absorb ─────────────────────────────────────────────────────────────────────
 
-def absorb_module(source_path: str, name: str = "", description: str = "") -> dict:
+def absorb_module(source_path: str, name: str = "", description: str = "", origin: str = "user") -> dict:
     """
     Absorb an existing Forge project as a module into forge-webapp.
 
@@ -157,6 +158,7 @@ def absorb_module(source_path: str, name: str = "", description: str = "") -> di
         namespace_path=str(dest_namespace),
         absorbed_at=_now(),
         description=description,
+        origin=origin,
     )
 
     # Rebuild forge-webapp models and endpoints so the namespace package is live
@@ -175,17 +177,27 @@ def absorb_module(source_path: str, name: str = "", description: str = "") -> di
 
 # ── shed ───────────────────────────────────────────────────────────────────────
 
-def shed_module(module_id: str, drop_datasets: bool = False) -> dict:
+def shed_module(module_id: str, drop_datasets: bool = False, confirm: bool = False) -> dict:
     """
     Remove a module from forge-webapp.
 
     NOTE: This does NOT touch any managed project's forge.toml — project owners
     must remove the [[forge_modules]] entry from their own projects.
+    Pass confirm=True when removing a suite-bundled module.
     """
     ForgeModule = _forge_module_model()
     mod = ForgeModule.get(module_id)
     if mod is None:
         return {"error": f"Module {module_id} not found"}
+
+    if getattr(mod, "origin", "user") == "suite" and not confirm:
+        return {
+            "warning": (
+                f"Module '{mod.name}' is bundled with this forge-suite installation. "
+                "Removing it is permanent until you reinstall forge-suite. "
+                "Pass confirm=True to proceed."
+            )
+        }
 
     module_name = mod.name
     snake = _name_to_snake(module_name)
@@ -266,20 +278,31 @@ def _drop_module_datasets(webapp_root: Path, module_name: str) -> None:
 
 def implant_module(project_id: str, module_name: str) -> dict:
     """
-    Add an absorbed module to a managed Forge project.
+    Fully implant an absorbed module into a managed Forge project.
 
-    Writes [[forge_modules]] to the target project's forge.toml.
-    Does NOT pip-install — the user must install the released package in their
-    own project venv separately.
+    Steps:
+    1. Verify the module is absorbed.
+    2. Find the target project.
+    3. Check module not already in project forge.toml.
+    4. Locate the project's Python interpreter (.venv).
+    5. Pip-install the module package into the project venv
+       (editable install if source_path is a live dev directory, else pinned release).
+    6. Append [[forge_modules]] block to project forge.toml.
+    7. Run forge model build in the project.
+    8. Run forge endpoint build in the project.
+    9. Sync project metadata in the Suite.
+    10. Return result.
+    Rolls back forge.toml write if model/endpoint build fails.
     """
+    import os
+    import subprocess
+
     ForgeModule = _forge_module_model()
 
-    # Find the module record
     mod = next((m for m in ForgeModule.all() if m.name == module_name), None)
     if mod is None:
         return {"error": f"Module '{module_name}' is not absorbed"}
 
-    # Find the target project
     from models.models import ForgeProject
     proj = ForgeProject.get(project_id)
     if proj is None:
@@ -290,6 +313,17 @@ def implant_module(project_id: str, module_name: str) -> dict:
     if not toml_path.exists():
         return {"error": f"forge.toml not found at {proj.root_path}"}
 
+    # Locate project venv Python interpreter
+    project_python = _find_project_python(root)
+    if project_python is None:
+        return {
+            "error": (
+                f"No .venv found in {proj.root_path}. "
+                "Run 'forge dev serve' once inside the project to bootstrap its venv, "
+                "or use 'bash setup.sh' if the project has one."
+            )
+        }
+
     if sys.version_info >= (3, 11):
         import tomllib
     else:
@@ -298,21 +332,81 @@ def implant_module(project_id: str, module_name: str) -> dict:
     with open(toml_path, "rb") as f:
         raw = tomllib.load(f)
 
-    # Check not already present
     if any(m.get("name") == module_name for m in raw.get("forge_modules", [])):
         return {"error": f"Module '{module_name}' is already in this project's forge.toml"}
 
-    # Append block
-    existing = toml_path.read_text(encoding="utf-8")
+    # ── Step 5: pip install into project venv ──────────────────────────────────
+    pip_spec = _resolve_pip_spec(mod)
+    _utf8_env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    pip_result = subprocess.run(
+        [str(project_python), "-m", "pip", "install"] + pip_spec,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=_utf8_env,
+    )
+    if pip_result.returncode != 0:
+        return {
+            "error": f"pip install failed:\n{pip_result.stderr.strip()}",
+            "pip_spec": pip_spec,
+        }
+
+    # ── Step 6: append [[forge_modules]] to project forge.toml ────────────────
+    existing_toml = toml_path.read_text(encoding="utf-8")
     block = (
         f'\n[[forge_modules]]\n'
         f'name       = "{mod.name}"\n'
         f'package    = "{mod.package}"\n'
         f'config_var = "{_default_config_var(mod.name)}"\n'
     )
-    toml_path.write_text(existing + block, encoding="utf-8")
+    toml_path.write_text(existing_toml + block, encoding="utf-8")
 
-    # Sync project metadata
+    # ── Step 7: run module init pipelines to seed datasets with proper schema ──
+    init_pipelines_run: list[str] = []
+    init_pipeline_errors: list[str] = []
+    mc = _load_module_config(module_name)
+    if mc and mc.pipelines:
+        for pl in mc.pipelines:
+            pl_name = pl.display_name
+            if "init" in pl_name.lower():
+                r = subprocess.run(
+                    [str(project_python), "-m", "forge.cli.main", "pipeline", "run", pl_name],
+                    cwd=str(root),
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    env=_utf8_env,
+                )
+                if r.returncode == 0:
+                    init_pipelines_run.append(pl_name)
+                else:
+                    init_pipeline_errors.append(
+                        f"pipeline run {pl_name}: {(r.stderr or r.stdout or '')[-300:].strip()}"
+                    )
+
+    # ── Steps 8–9: forge model build + forge endpoint build in project ─────────
+    build_errors = []
+    for cmd in (["model", "build"], ["endpoint", "build"]):
+        r = subprocess.run(
+            [str(project_python), "-m", "forge.cli.main"] + cmd,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=_utf8_env,
+        )
+        if r.returncode != 0:
+            build_errors.append(f"forge {' '.join(cmd)}: {r.stderr.strip()}")
+
+    if build_errors:
+        # Roll back forge.toml write to leave the project in a consistent state
+        toml_path.write_text(existing_toml, encoding="utf-8")
+        return {
+            "error": "Build failed after pip install; forge.toml has been restored.",
+            "details": build_errors,
+        }
+
+    # ── Step 10: sync Suite project metadata ──────────────────────────────────
     from forge_suite.operations.projects import sync_project
     sync_project(project_id)
 
@@ -320,12 +414,57 @@ def implant_module(project_id: str, module_name: str) -> dict:
         "ok": True,
         "module": module_name,
         "project": proj.name,
-        "note": (
-            f"Module '{module_name}' added to forge.toml. "
-            f"Install '{mod.package}' in the project's own venv, then run "
-            "'forge model build && forge endpoint build' in the project."
-        ),
+        "pip_spec": pip_spec,
+        "init_pipelines": init_pipelines_run,
+        "init_pipeline_errors": init_pipeline_errors,
     }
+
+
+def _find_project_python(root: Path) -> Path | None:
+    """Return the Python interpreter inside the project's .venv, or None."""
+    candidates = [
+        root / ".venv" / "bin" / "python",
+        root / ".venv" / "Scripts" / "python.exe",
+        root / ".venv" / "Scripts" / "python",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
+
+
+def _load_module_config(module_name: str):
+    """Load MODULE_CONFIG from the absorbed module copy in forge-webapp."""
+    webapp_root = _webapp_root()
+    webapp_str = str(webapp_root)
+    if webapp_str not in sys.path:
+        sys.path.insert(0, webapp_str)
+    snake = _name_to_snake(module_name)
+    module_path = f"forge_modules.{snake}.module"
+    try:
+        # Force re-import in case the module was just written to disk
+        if module_path in sys.modules:
+            del sys.modules[module_path]
+        m = importlib.import_module(module_path)
+        return getattr(m, "MODULE_CONFIG", None)
+    except Exception:
+        return None
+
+
+def _resolve_pip_spec(mod) -> list[str]:
+    """
+    Return the pip install argument list for a module.
+
+    Uses editable install when source_path is a live dev directory (contains
+    forge.toml), otherwise uses a pinned release install.
+    """
+    src = Path(mod.source_path) if mod.source_path else None
+    if src and src.is_dir() and (src / "forge.toml").exists():
+        return ["-e", str(src)]
+    version = getattr(mod, "version", "dev")
+    if version and version != "dev":
+        return [f"{mod.package}=={version}"]
+    return [mod.package]
 
 
 # ── internal rebuild ───────────────────────────────────────────────────────────
